@@ -9,7 +9,7 @@ import AssetsStep from './steps/AssetsStep';
 import MortgageStep from './steps/MortgageStep';
 import SummaryStep from './steps/SummaryStep';
 import LoadingSpinner from '../ui/loading-spinner';
-import ProgressIndicator from '../ui/progress-indicator';
+import { ProgressIndicator } from '../ui/progress-indicator';
 
 const OnboardingWizard: React.FC = () => {
   const {

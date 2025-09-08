@@ -19,8 +19,8 @@ const IncomeStep: React.FC = () => {
   
   const isMarriedBoth = data.personal?.maritalStatus === 'verheiratet' && data.personal?.calcScope === 'beide_personen';
 
-  const handleIncomeChange = (field: string, value: number) => {
-    updateIncomeData({ [field]: value });
+  const handleIncomeChange = (field: keyof IncomeData, value: number) => {
+    updateIncomeData({ income: { [field]: value } });
   };
 
   const handleOtherIncomeChange = (field: string, value: any) => {

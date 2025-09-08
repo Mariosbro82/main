@@ -23,8 +23,8 @@ import { useToast } from "@/hooks/use-toast";
 import { t } from "@/lib/i18n";
 import type { TabType, FormData } from "@/lib/types";
 import type { SimulationResults } from "@/lib/types";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useErrorHandler } from "@/components/ui/ErrorBoundary";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { FadeIn, SlideIn, ScaleIn, StaggerContainer, StaggerItem, ScrollReveal, HoverScale, PageTransition } from "@/components/ui/animations";
 import { User, Settings, Check, X, Download, Calculator, Info, TrendingUp, Shield, AlertCircle, Eye, EyeOff, Moon, Sun, HelpCircle } from "lucide-react";
 import { Link } from "wouter";
@@ -623,13 +623,6 @@ function Home() {
     { id: "custom-comparison", label: getTranslation("tabs.customComparison") },
   ] as const;
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', { 
-      style: 'currency', 
-      currency: 'EUR',
-      maximumFractionDigits: 0 
-    }).format(value);
-  };
 
   return (
     <ErrorBoundary>
@@ -970,9 +963,19 @@ function Home() {
                                   placeholder="500"
                                   {...field}
                                   onChange={(e) => {
-                                    const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                    if (!isNaN(value) && value >= 0) {
-                                      field.onChange(value);
+                                    const inputValue = e.target.value;
+                                    if (inputValue === '') {
+                                      field.onChange(0);
+                                    } else {
+                                      const value = Number(inputValue);
+                                      if (!isNaN(value) && value >= 0) {
+                                        field.onChange(value);
+                                      }
+                                    }
+                                  }}
+                                  onFocus={(e) => {
+                                    if (field.value === 0) {
+                                      e.target.select();
                                     }
                                   }}
                                   className="text-2xl font-bold h-20 pl-14 pr-6 bg-gradient-to-r from-background to-accent/20 border-2 border-border/30 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/20 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -1036,9 +1039,19 @@ function Home() {
                                   placeholder="0"
                                   {...field}
                                   onChange={(e) => {
-                                    const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                    if (!isNaN(value) && value >= 0) {
-                                      field.onChange(value);
+                                    const inputValue = e.target.value;
+                                    if (inputValue === '') {
+                                      field.onChange(0);
+                                    } else {
+                                      const value = Number(inputValue);
+                                      if (!isNaN(value) && value >= 0) {
+                                        field.onChange(value);
+                                      }
+                                    }
+                                  }}
+                                  onFocus={(e) => {
+                                    if (field.value === 0) {
+                                      e.target.select();
                                     }
                                   }}
                                   className="text-2xl font-bold h-20 pl-14 pr-6 bg-gradient-to-r from-background to-accent/20 border-2 border-border/30 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/20 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl"

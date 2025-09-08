@@ -36,6 +36,7 @@ export default function Questions() {
   const { toast } = useToast();
   
   const totalSteps = 6;
+  const [isStepValid, setIsStepValid] = useState(true);
 
   const form = useForm<QuestionsFormData>({
     resolver: zodResolver(questionsSchema),
@@ -63,7 +64,44 @@ export default function Questions() {
     }).format(value);
   };
 
+  const validateCurrentStep = () => {
+    const values = form.getValues();
+    
+    switch (currentStep) {
+      case 1:
+        return values.currentAge >= 18 && values.currentAge <= 80;
+      case 2:
+        return values.termYears >= 5 && values.termYears <= 45 && values.monthlyContribution >= 0;
+      case 3:
+        return values.startInvestment >= 0;
+      case 4:
+        return values.payoutStartAge >= 62 && values.payoutStartAge <= 85 && 
+               values.payoutEndAge >= 62 && values.payoutEndAge <= 85 &&
+               values.payoutEndAge > values.payoutStartAge;
+      case 5:
+        return values.payoutMode && (values.payoutMode === 'annuity' || values.payoutMode === 'flex');
+      case 6:
+        return values.monthlyStatutoryPension >= 0;
+      default:
+        return true;
+    }
+  };
+
+  // Update validation state when form values or current step changes
+  useEffect(() => {
+    setIsStepValid(validateCurrentStep());
+  }, [currentStep, form.watch()]);
+
   const handleNext = () => {
+    if (!validateCurrentStep()) {
+      toast({
+        title: language === 'de' ? 'Ungültige Eingabe' : 'Invalid Input',
+        description: language === 'de' ? 'Bitte überprüfen Sie Ihre Eingaben' : 'Please check your inputs',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
@@ -662,7 +700,12 @@ export default function Questions() {
                   <Button
                     type="button"
                     onClick={handleNext}
-                    className="px-6 py-3 rounded-xl bg-primary hover:bg-primary/90"
+                    disabled={!isStepValid}
+                    className={`px-6 py-3 rounded-xl transition-all duration-200 ${
+                      isStepValid 
+                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                        : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                    }`}
                   >
                     {language === 'de' ? 'Weiter' : 'Next'}
                     <ArrowRight className="w-4 h-4 ml-2" />

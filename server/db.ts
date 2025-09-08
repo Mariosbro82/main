@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from "@shared/schema";
 
 if (!process.env.DATABASE_URL) {
@@ -11,7 +11,6 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Use the database path directly
-const dbPath = process.env.DATABASE_URL;
-const sqlite = new Database(dbPath);
-export const db = drizzle(sqlite, { schema });
+// Create postgres connection
+const client = postgres(process.env.DATABASE_URL);
+export const db = drizzle(client, { schema });
