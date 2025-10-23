@@ -28,8 +28,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { FadeIn, SlideIn, ScaleIn, StaggerContainer, StaggerItem, ScrollReveal, HoverScale, PageTransition } from "@/components/ui/animations";
 import { User, Settings, Check, X, Download, Calculator, Info, TrendingUp, Shield, AlertCircle, Eye, EyeOff, Moon, Sun, HelpCircle } from "lucide-react";
 import { Link } from "wouter";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { generatePensionPDF } from "@/services/pdf-generator";
 
 const formSchema = z.object({
   currentAge: z.number().min(18).max(80),
@@ -425,122 +424,24 @@ function Home() {
     }
 
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      let yPosition = 20;
-
-      // Header
-      pdf.setFontSize(20);
-      pdf.setTextColor(0, 102, 204);
-      pdf.text(language === 'de' ? 'Rentenrechner Bericht' : 'Pension Calculator Report', 20, yPosition);
-      yPosition += 15;
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(100, 100, 100);
-      pdf.text(`${language === 'de' ? 'Erstellt am:' : 'Created on:'} ${new Date().toLocaleDateString('de-DE')}`, 20, yPosition);
-      yPosition += 20;
-
-      // Input Parameters
-      pdf.setFontSize(14);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(language === 'de' ? 'Eingabeparameter:' : 'Input Parameters:', 20, yPosition);
-      yPosition += 10;
-
-      const formData = form.getValues();
-      const params = [
-        [`${language === 'de' ? 'Startalter:' : 'Start Age:'}`, `${formData.startAge} Jahre`],
-        [`${language === 'de' ? 'Laufzeit:' : 'Duration:'}`, `${formData.termYears} Jahre`],
-        [`${language === 'de' ? 'Monatlicher Beitrag:' : 'Monthly Contribution:'}`, formatCurrency(formData.monthlyContribution)],
-        [`${language === 'de' ? 'Startkapital:' : 'Initial Capital:'}`, formatCurrency(formData.startInvestment)],
-        [`${language === 'de' ? 'Zielwert:' : 'Target Value:'}`, formData.targetMaturityValue ? formatCurrency(formData.targetMaturityValue) : 'Nicht gesetzt'],
-        [`${language === 'de' ? 'Rentenbeginn:' : 'Retirement Start:'}`, `${formData.payoutStartAge} Jahre`],
-        [`${language === 'de' ? 'Rentenende:' : 'Retirement End:'}`, `${formData.payoutEndAge} Jahre`],
-        [`${language === 'de' ? 'Auszahlungsmodus:' : 'Payout Mode:'}`, formData.payoutMode === 'annuity' ? 'Lebenslange Rente' : 'Flexible Entnahme']
-      ];
-
-      pdf.setFontSize(10);
-      params.forEach(([label, value]) => {
-        pdf.text(`${label} ${value}`, 20, yPosition);
-        yPosition += 6;
+      // Show loading toast
+      toast({
+        title: language === 'de' ? 'PDF wird erstellt...' : 'Creating PDF...',
+        description: language === 'de' ? 'Bitte warten Sie, während Ihr Bericht generiert wird' : 'Please wait while your report is being generated'
       });
-      yPosition += 10;
 
-      // Results
-      pdf.setFontSize(14);
-      pdf.text(language === 'de' ? 'Simulationsergebnisse:' : 'Simulation Results:', 20, yPosition);
-      yPosition += 10;
-
-      const results = [
-        [`${language === 'de' ? 'Prognostizierter Wert:' : 'Projected Value:'}`, formatCurrency(simulationResults.kpis.projectedValue)],
-        [`${language === 'de' ? 'Monatliche Rente:' : 'Monthly Pension:'}`, formatCurrency(simulationResults.kpis.monthlyPension)],
-        [`${language === 'de' ? 'Gesamtkosten:' : 'Total Costs:'}`, formatCurrency(simulationResults.kpis.totalFees)],
-        [`${language === 'de' ? 'Nettoertrag:' : 'Net Return:'}`, formatCurrency(simulationResults.kpis.netReturn)],
-        [`${language === 'de' ? 'Eingezahlte Beiträge:' : 'Total Contributions:'}`, formatCurrency(simulationResults.kpis.totalContributions)]
-      ];
-
-      pdf.setFontSize(10);
-      results.forEach(([label, value]) => {
-        pdf.text(`${label} ${value}`, 20, yPosition);
-        yPosition += 6;
+      // Generate PDF using the enhanced service
+      await generatePensionPDF({
+        language,
+        formData: form.getValues(),
+        simulationResults,
+        costSettings,
+        comparisonData: comparisonScenarios.length > 0 ? comparisonScenarios : undefined
       });
-      yPosition += 15;
 
-      // Add cost settings to PDF
-      pdf.setFontSize(14);
-      pdf.text('Kosten & Steuereinstellungen:', 20, yPosition);
-      yPosition += 10;
-      
-      const costParams = [
-        [`Policenkosten (p.a.):`, `${(costSettings.policyFeeAnnualPct * 100).toFixed(2)}%`],
-        [`TER Fonds:`, `${(costSettings.ter * 100).toFixed(2)}%`],
-        [`Steuersatz Auszahlung:`, `${(costSettings.taxRatePayout * 100).toFixed(0)}%`],
-        [`Erwartete Rendite:`, `${(costSettings.expectedReturn * 100).toFixed(1)}%`],
-        [`Volatilität:`, `${(costSettings.volatility * 100).toFixed(0)}%`]
-      ];
-      
-      pdf.setFontSize(10);
-      costParams.forEach(([label, value]) => {
-        pdf.text(`${label} ${value}`, 20, yPosition);
-        yPosition += 6;
-      });
-      yPosition += 15;
-
-      // Capture all chart containers
-      const chartContainers = document.querySelectorAll('.chart-container');
-      for (let i = 0; i < Math.min(chartContainers.length, 3); i++) {
-        const chartElement = chartContainers[i] as HTMLElement;
-        
-        try {
-          const canvas = await html2canvas(chartElement, {
-            scale: 1.5,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
-          });
-          
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = pageWidth - 40;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          if (yPosition + imgHeight > pageHeight - 20) {
-            pdf.addPage();
-            yPosition = 20;
-          }
-          
-          pdf.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
-          yPosition += imgHeight + 15;
-        } catch (error) {
-          console.warn(`Chart ${i + 1} capture failed:`, error);
-        }
-      }
-
-      // Save PDF
-      pdf.save(`rentenrechner-bericht-${new Date().toLocaleDateString('de-DE').replace(/\./g, '-')}.pdf`);
-      
       toast({
         title: language === 'de' ? 'PDF erfolgreich exportiert' : 'PDF exported successfully',
-        description: language === 'de' ? 'Ihr Bericht wurde als PDF gespeichert' : 'Your report has been saved as PDF'
+        description: language === 'de' ? 'Ihr detaillierter Bericht wurde als PDF gespeichert' : 'Your detailed report has been saved as PDF'
       });
     } catch (error) {
       console.error('PDF export error:', error);
