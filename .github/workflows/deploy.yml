@@ -33,10 +33,9 @@ jobs:
       run: npm ci
     
     - name: Build
-      run: npm run build
+      run: npm run build:client
       env:
         NODE_ENV: production
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
     - name: Setup Pages
       uses: actions/configure-pages@v4

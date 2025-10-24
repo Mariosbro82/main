@@ -461,14 +461,38 @@ function Home() {
         description: language === 'de' ? 'Bitte warten Sie...' : 'Please wait...'
       });
 
-      // Download the interactive form from the server
-      const response = await fetch(`/api/generate-interactive-form?language=${language}`);
+      try {
+        // Try to download from server first (for local development)
+        const response = await fetch(`/api/generate-interactive-form?language=${language}`);
 
-      if (!response.ok) {
-        throw new Error('Failed to generate form');
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `pension-calculator-form-${language}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+
+          toast({
+            title: language === 'de' ? 'Interaktives Formular heruntergeladen' : 'Interactive form downloaded',
+            description: language === 'de'
+              ? 'Öffnen Sie das PDF mit Adobe Reader zum Ausfüllen und automatischen Berechnen'
+              : 'Open the PDF with Adobe Reader to fill and automatically calculate'
+          });
+          return;
+        }
+      } catch (serverError) {
+        console.log('Server not available, generating PDF client-side');
       }
 
-      const blob = await response.blob();
+      // Fallback: Generate PDF client-side for GitHub Pages
+      const { generateInteractivePensionForm } = await import('@/services/interactive-pdf-form');
+      const pdfBytes = await generateInteractivePensionForm({ language });
+
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
