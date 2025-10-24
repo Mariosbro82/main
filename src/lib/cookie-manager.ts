@@ -1,10 +1,10 @@
 export type CookieCategory = 'necessary' | 'analytics' | 'marketing';
 
 export interface CookieConsent {
-  necessary: boolean;
+  necessary: boolean | undefined;
   analytics: boolean;
   marketing: boolean;
-  timestamp: number;
+  timestamp?: number;
 }
 
 export interface CookieSettings {
@@ -17,7 +17,7 @@ const COOKIE_BANNER_KEY = 'cookie-banner-shown';
 
 export class CookieManager {
   private static instance: CookieManager;
-  private listeners: Set<() => void> = new Set();
+  private listeners: Set<(consent: CookieConsent) => void> = new Set();
   private bannerVisible = true;
   private _consentCache: CookieConsent | null = null;
 
@@ -138,11 +138,11 @@ export class CookieManager {
 
   // Listener für Consent-Änderungen
   addConsentListener(listener: (consent: CookieConsent) => void): void {
-    this.listeners.push(listener);
+    this.listeners.add(listener);
   }
 
   removeConsentListener(listener: (consent: CookieConsent) => void): void {
-    this.listeners = this.listeners.filter(l => l !== listener);
+    this.listeners.delete(listener);
   }
 
   private notifyListeners(consent: CookieConsent): void {

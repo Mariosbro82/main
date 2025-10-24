@@ -4,23 +4,23 @@ import { Wallet, TrendingUp, PiggyBank, Shield } from 'lucide-react';
 
 const AssetsStep: React.FC = () => {
   const { data, updateAssetsData } = useOnboardingStore();
-  
-  const assets = data.assets || {
-    lifeInsurance: { sum: 0 },
-    funds: { balance: 0 },
-    savings: { balance: 0 }
+
+  const assets = {
+    lifeInsurance: data.lifeInsurance || { sum: 0 },
+    funds: data.funds || { balance: 0 },
+    savings: data.savings || { balance: 0 }
   };
-  
+
   // Check if married and calculating for both persons
   const isMarriedBoth = data.personal?.maritalStatus === 'verheiratet' && data.personal?.calcScope === 'beide_personen';
 
   const handleAssetChange = (category: string, field: string, value: number) => {
-    const currentAssets = data.assets || {
-      lifeInsurance: { sum: 0 },
-      funds: { balance: 0 },
-      savings: { balance: 0 }
+    const currentAssets = {
+      lifeInsurance: data.lifeInsurance || { sum: 0 },
+      funds: data.funds || { balance: 0 },
+      savings: data.savings || { balance: 0 }
     };
-    
+
     updateAssetsData({
       ...currentAssets,
       [category]: {

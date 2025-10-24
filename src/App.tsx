@@ -8,9 +8,9 @@ import { Footer } from "@/components/Footer";
 import { Suspense, lazy } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import Dashboard from "@/pages/dashboard";
 import Home from "@/pages/home";
 import Questions from "@/pages/questions";
-import DebugImages from "@/pages/debug-images";
 import TaxCalculatorPage from "@/pages/TaxCalculatorPage";
 import NotFound from "@/pages/not-found";
 import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
@@ -43,9 +43,9 @@ function Router() {
   return (
     <WouterRouter base={base}>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/" component={Dashboard} />
+        <Route path="/calculator" component={Home} />
         <Route path="/questions" component={Questions} />
-        <Route path="/debug" component={DebugImages} />
         <Route path="/tax-calculator" component={TaxCalculatorPage} />
         <Route path="/impressum">
           <Suspense fallback={<LegalPageLoader />}>

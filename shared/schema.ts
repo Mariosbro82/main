@@ -1,19 +1,19 @@
 import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, real, timestamp, uuid, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const scenarios = sqliteTable("scenarios", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+export const scenarios = pgTable("scenarios", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   description: text("description"),
-  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
-  updatedAt: integer("updated_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const privatePensionPlans = sqliteTable("private_pension_plans", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  scenarioId: text("scenario_id").notNull().references(() => scenarios.id, { onDelete: "cascade" }),
+export const privatePensionPlans = pgTable("private_pension_plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  scenarioId: uuid("scenario_id").notNull().references(() => scenarios.id, { onDelete: "cascade" }),
   
   // Grundlagen
   currentAge: integer("current_age").notNull().default(30),
@@ -41,14 +41,14 @@ export const privatePensionPlans = sqliteTable("private_pension_plans", {
   expectedReturn: real("expected_return").notNull().default(0.065), // Korrigiert: 6.5% realistischer
   ter: real("ter").notNull().default(0.008), // Korrigiert: 0.8% realistischer TER
   volatility: real("volatility").notNull().default(0.18), // Korrigiert: 18% realistischere Volatilität
-  rebalancingEnabled: integer("rebalancing_enabled", { mode: 'boolean' }).notNull().default(true),
+  rebalancingEnabled: boolean("rebalancing_enabled").notNull().default(true),
   
-  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
-  updatedAt: integer("updated_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
 });

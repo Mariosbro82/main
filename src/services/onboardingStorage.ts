@@ -1,4 +1,4 @@
-import { OnboardingData, OnboardingExport } from '../types/onboarding';
+import { OnboardingData, OnboardingExportData } from '../types/onboarding';
 
 const STORAGE_KEY = 'pension_calculator_onboarding';
 const VERSION = '1.0.0';
@@ -70,8 +70,7 @@ export class OnboardingStorageService {
   markCompleted(data: OnboardingData): void {
     const completedData = {
       ...data,
-      completedAt: new Date(),
-      version: VERSION
+      completedAt: new Date().toISOString()
     };
     this.saveData(completedData);
   }

@@ -20,6 +20,10 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeUpdates, useFieldUpdates } from '@/hooks/use-realtime-updates';
+import {
+  CAPITAL_GAINS_TAX_RATE_PERCENT,
+  GOVERNMENT_PARAMETERS_2024,
+} from '@/data/governmentParameters';
 
 interface TaxCalculatorProps {
   language: 'de' | 'en';
@@ -37,6 +41,12 @@ interface TaxCalculation {
   ruerupAdvantage: number;
 }
 
+const CAPITAL_GAINS_TAX_DECIMAL = CAPITAL_GAINS_TAX_RATE_PERCENT / 100;
+const DEFAULT_VORABPAUSCHALE = GOVERNMENT_PARAMETERS_2024.tax.vorabpauschaleBasiszins;
+const DEFAULT_RUERUP_MAX = GOVERNMENT_PARAMETERS_2024.tax.ruerupMaxContribution;
+const DEFAULT_RUERUP_DEDUCTIBLE_RATE = GOVERNMENT_PARAMETERS_2024.tax.ruerupDeductibleRate;
+const DEFAULT_TAXABLE_PORTION = GOVERNMENT_PARAMETERS_2024.tax.taxablePortionRetirement;
+
 const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
   const [settings, setSettings] = useState({
     annualIncome: 65000,
@@ -45,8 +55,8 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
     taxRate: 0.35,
     ruerupReturn: 0.065,
     etfReturn: 0.07,
-    etfTaxRate: 0.26375, // 26,375% Abgeltungsteuer
-    vorabpauschale: 0.007, // 0,7% Vorabpauschale
+    etfTaxRate: CAPITAL_GAINS_TAX_DECIMAL,
+    vorabpauschale: DEFAULT_VORABPAUSCHALE,
   });
 
   // Real-time updates hooks
@@ -109,7 +119,7 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
   }, [saveEdit, showSuccess, showError]);
 
   // Maximaler Rürup-Beitrag 2024 (Sonderausgabenabzug)
-  const maxRuerupContribution = 27566; // 2024: Höchstbetrag für Sonderausgaben (96% absetzbar)
+  const maxRuerupContribution = DEFAULT_RUERUP_MAX;
 
   // Convert calculations to chart data format
   const convertToChartData = useCallback((yearlyResults: any[]) => {
@@ -123,12 +133,15 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
     }));
   }, [settings.currentAge, settings.retirementAge]);
 
-  // Enhanced calculation logic for Debeka vs ETF comparison
+const DEFAULT_TAXABLE_PORTION_PERCENT_LABEL = `${Math.round(DEFAULT_TAXABLE_PORTION * 100)}%`;
+const RUERUP_DEDUCTIBLE_PERCENT_LABEL = `${Math.round(DEFAULT_RUERUP_DEDUCTIBLE_RATE * 100)}%`;
+
+// Enhanced calculation logic for Debeka vs ETF comparison
   const calculateDebekaScenario = () => {
-    const maxDeduction = 27566; // 2024 limit for Sonderausgaben
+    const maxDeduction = DEFAULT_RUERUP_MAX;
     const annualContribution = settings.monthlyContribution * 12;
-    const actualDeduction = Math.min(annualContribution, maxDeduction);
-    const annualTaxSavings = actualDeduction * settings.taxRate;
+    const deductibleAmount = Math.min(annualContribution, maxDeduction) * DEFAULT_RUERUP_DEDUCTIBLE_RATE;
+    const annualTaxSavings = deductibleAmount * settings.taxRate;
     const effectiveAnnualContribution = annualContribution - annualTaxSavings;
     
     // Accumulation phase with compound interest
@@ -141,8 +154,8 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
       accumulatedValue = (accumulatedValue + monthlyContribution) * (1 + monthlyReturn);
     }
     
-    // Payout phase - taxed at 83% (Besteuerungsanteil for retirement in 2024)
-    const taxablePortionRate = 0.83; // Besteuerungsanteil for retirement in 2024
+    // Payout phase - taxed using the current taxable portion (Besteuerungsanteil)
+    const taxablePortionRate = DEFAULT_TAXABLE_PORTION;
     const monthlyPension = accumulatedValue * 0.025 / 12; // 2.5% annual withdrawal
     const monthlyTaxOnPension = monthlyPension * taxablePortionRate * settings.taxRate;
     const netMonthlyPension = monthlyPension - monthlyTaxOnPension;
@@ -175,14 +188,14 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
       // Annual dividend tax (simplified - applied monthly)
       if (month % 12 === 11) {
         const annualDividends = accumulatedValue * 0.02; // 2% dividend yield
-        const dividendTax = annualDividends * 0.26375; // 25% + Soli
+        const dividendTax = annualDividends * settings.etfTaxRate;
         totalDividends += annualDividends;
         accumulatedValue -= dividendTax;
         
         // Vorabpauschale (only if no dividends or dividends < Vorabpauschale)
-        const basiszins = 0.02; // 2% Basiszins
+        const basiszins = settings.vorabpauschale;
         const vorabpauschale = Math.max(0, accumulatedValue * basiszins * 0.7 - annualDividends);
-        const vorabpauschaleeTax = vorabpauschale * 0.26375;
+        const vorabpauschaleeTax = vorabpauschale * settings.etfTaxRate;
         accumulatedValue -= vorabpauschaleeTax;
       }
     }
@@ -190,7 +203,7 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
     // Final capital gains tax on sale
     const totalContributions = annualContribution * settings.investmentPeriod;
     const capitalGains = Math.max(0, accumulatedValue - totalContributions);
-    const capitalGainsTax = capitalGains * 0.26375;
+    const capitalGainsTax = capitalGains * settings.etfTaxRate;
     const netValue = accumulatedValue - capitalGainsTax;
     
     // Withdrawal phase (4% rule)
@@ -212,27 +225,27 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
 
   // Berechnungsfunktionen
   const calculateTaxSavings = (contribution: number, taxRate: number) => {
-    // Sonderausgabenabzug: 100% der Beiträge sind 2025 absetzbar, 96% für 2024
-    const deductiblePercentage = 0.96; // 2024: 96%, 2025: 100%
-    const deductibleAmount = Math.min(contribution * deductiblePercentage, maxRuerupContribution * deductiblePercentage);
+    // Sonderausgabenabzug gemäß BMF (2024: 96 % der Beiträge bis zum Höchstbetrag)
+    const deductibleAmount =
+      Math.min(contribution, maxRuerupContribution) * DEFAULT_RUERUP_DEDUCTIBLE_RATE;
     return deductibleAmount * taxRate;
   };
 
   const calculateETFTaxes = (value: number, gains: number, year: number) => {
-    // Vorabpauschale: 1% des Wertes zu Jahresbeginn, max 70% der Wertsteigerung
-    const basiszins = 0.01; // 1% für 2024
+    // Vorabpauschale: Basiszins (BMF) * 70 % der Wertsteigerung, gedeckelt auf den realen Gewinn
+    const basiszins = settings.vorabpauschale;
     const vorabpauschaleBase = value * basiszins;
     const maxVorabpauschale = gains * 0.7;
     const vorabpauschale = Math.min(vorabpauschaleBase, maxVorabpauschale, gains);
     
-    // Kapitalertragsteuer: 25% + 5,5% Soli = 26,375%
-    const taxRate = 0.26375;
+    // Kapitalertragsteuer inkl. Solidaritätszuschlag
+    const taxRate = settings.etfTaxRate;
     
     // Jährliche Vorabpauschale-Steuer
     const annualVorabpauschaleeTax = vorabpauschale * taxRate;
     
     // Bei Verkauf: Steuer auf Gewinne abzüglich bereits gezahlter Vorabpauschale
-    const remainingGains = Math.max(0, gains - (vorabpauschale * year));
+    const remainingGains = Math.max(0, gains - vorabpauschale * year);
     const finalCapitalGainsTax = remainingGains * taxRate;
     
     return annualVorabpauschaleeTax * year + finalCapitalGainsTax;
@@ -299,7 +312,7 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
       taxRate: 'Grenzsteuersatz',
       ruerupReturn: 'Rürup-Rendite p.a.',
       etfReturn: 'ETF-Rendite p.a.',
-      maxContribution: 'Max. Sonderausgaben 2024: 27.566€ (96% absetzbar)',
+      maxContribution: `Max. Sonderausgaben 2024: 27.566€ (${RUERUP_DEDUCTIBLE_PERCENT_LABEL} absetzbar)`,
       taxSavings: 'Jährliche Steuerersparnis',
       totalSavings: 'Gesamte Steuerersparnis',
       finalValue: 'Endwert nach',
@@ -322,7 +335,7 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
       taxRate: 'Marginal Tax Rate',
       ruerupReturn: 'Rürup Return p.a.',
       etfReturn: 'ETF Return p.a.',
-      maxContribution: 'Max. Tax Deduction 2024: €27,566 (96% deductible)',
+      maxContribution: `Max. Tax Deduction 2024: €27,566 (${RUERUP_DEDUCTIBLE_PERCENT_LABEL} deductible)`,
       taxSavings: 'Annual Tax Savings',
       totalSavings: 'Total Tax Savings',
       finalValue: 'Final Value after',
@@ -732,8 +745,8 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
                       <span className="font-mono">{formatCurrency(Math.min(settings.monthlyContribution * 12, maxRuerupContribution))}</span>
                     </div>
                     <div className="flex justify-between p-3 bg-green-50 rounded">
-                      <span>Abzugsfähiger Betrag (96% für 2024):</span>
-                      <span className="font-mono">{formatCurrency(Math.min(settings.monthlyContribution * 12, maxRuerupContribution) * 0.96)}</span>
+                      <span>Abzugsfähiger Betrag (${RUERUP_DEDUCTIBLE_PERCENT_LABEL} für 2024):</span>
+                      <span className="font-mono">{formatCurrency(Math.min(settings.monthlyContribution * 12, maxRuerupContribution) * DEFAULT_RUERUP_DEDUCTIBLE_RATE)}</span>
                     </div>
                     <div className="flex justify-between p-3 bg-green-100 rounded">
                       <span>Jährliche Steuerersparnis:</span>
@@ -741,7 +754,7 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
                     </div>
                     <div className="flex justify-between p-3 bg-yellow-50 rounded">
                       <span>Nachgelagerte Besteuerung:</span>
-                      <span className="text-sm">83% Besteuerungsanteil bei Rentenbeginn 2024+</span>
+                      <span className="text-sm">{DEFAULT_TAXABLE_PORTION_PERCENT_LABEL} Besteuerungsanteil bei Rentenbeginn 2024+</span>
                     </div>
                   </div>
                 </div>
@@ -764,7 +777,7 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
                     </div>
                     <div className="flex justify-between p-3 bg-yellow-50 rounded">
                       <span>Taxation:</span>
-                      <span className="text-sm">83% taxable portion for retirement from 2024+</span>
+                      <span className="text-sm">{DEFAULT_TAXABLE_PORTION_PERCENT_LABEL} taxable portion for retirement from 2024+</span>
                     </div>
                   </div>
                 </div>
@@ -804,7 +817,7 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold mb-2">Wichtige Hinweise:</h4>
                   <ul className="text-sm space-y-1 text-gray-600">
-                    <li>• Rürup-Renten: 83% steuerpflichtig bei Rentenbeginn 2024, 83,5% bei 2025</li>
+                    <li>• Rürup-Renten: {DEFAULT_TAXABLE_PORTION_PERCENT_LABEL} steuerpflichtig bei Rentenbeginn 2024, steigt jährlich um 0,5 %-Punkte bis 100%</li>
                     <li>• ETF-Erträge unterliegen der Abgeltungsteuer (26,375%)</li>
                     <li>• Vorabpauschale wird jährlich auf unrealisierte Gewinne erhoben</li>
                     <li>• Steuerersparnis kann reinvestiert werden für zusätzliche Rendite</li>

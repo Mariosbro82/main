@@ -3,12 +3,20 @@
  * Includes Kapitalertragssteuer, Vorabpauschale, and Ertragsanteil calculations
  */
 
+import {
+  CAPITAL_GAINS_TAX_RATE_PERCENT,
+  GOVERNMENT_PARAMETERS_2024,
+  PARTIAL_EXEMPTION_PERCENT,
+} from "@/data/governmentParameters";
+
 export interface TaxSettings {
   capitalGainsTaxRate: number; // 25% + Soli (26.375%)
   churchTaxRate: number; // 8-9% additional
-  allowance: number; // Sparer-Pauschbetrag
+  allowance: number; // Sparer-Pauschbetrag (Freistellungsauftrag)
   baseRate: number; // Basiszins für Vorabpauschale
   hasChurchTax: boolean;
+  useHalfIncomeTaxation?: boolean; // Halbeinkünfteverfahren ab 62
+  partialExemption?: number; // Teilfreistellung (default 15% für Fonds)
 }
 
 export interface InvestmentData {
@@ -183,12 +191,131 @@ export function calculateFinalSaleTax(
 }
 
 /**
+ * Calculate tax with Halbeinkünfteverfahren (Half-Income Taxation) from age 62
+ * Only 50% of income is taxable
+ */
+export function applyHalfIncomeTaxation(
+  taxableIncome: number,
+  age: number,
+  useHalfIncome: boolean = false
+): number {
+  if (useHalfIncome && age >= 62) {
+    return taxableIncome * 0.5; // Only 50% taxable
+  }
+  return taxableIncome;
+}
+
+/**
+ * Apply Teilfreistellung (Partial Exemption) - typically 15% for equity funds
+ * This reduces the taxable gains
+ */
+export function applyPartialExemption(
+  gains: number,
+  exemptionRate: number = 0.15
+): {
+  exemptedAmount: number;
+  taxableAmount: number;
+} {
+  const exemptedAmount = gains * exemptionRate;
+  const taxableAmount = gains * (1 - exemptionRate);
+
+  return {
+    exemptedAmount,
+    taxableAmount
+  };
+}
+
+/**
+ * Calculate tax on pension payout with all applicable rules
+ * Includes: Freistellungsauftrag, Halbeinkünfteverfahren, Teilfreistellung
+ */
+export function calculatePayoutTax(
+  totalGains: number,
+  age: number,
+  settings: TaxSettings,
+  usedAllowance: number = 0
+): {
+  originalGains: number;
+  afterPartialExemption: number;
+  afterHalfIncomeTaxation: number;
+  afterAllowance: number;
+  totalTax: number;
+  effectiveTaxRate: number;
+} {
+  const partialExemptionRate = settings.partialExemption || 0.15;
+
+  // Step 1: Apply Teilfreistellung (only on gains/Erträge)
+  const { taxableAmount: afterPartialExemption } = applyPartialExemption(
+    totalGains,
+    partialExemptionRate
+  );
+
+  // Step 2: Apply Halbeinkünfteverfahren if age >= 62
+  const afterHalfIncome = applyHalfIncomeTaxation(
+    afterPartialExemption,
+    age,
+    settings.useHalfIncomeTaxation
+  );
+
+  // Step 3: Apply Freistellungsauftrag (allowance)
+  const { taxableAfterAllowance: afterAllowance } = applyAllowance(
+    afterHalfIncome,
+    settings.allowance,
+    usedAllowance
+  );
+
+  // Step 4: Calculate final tax
+  const effectiveTaxRate = getEffectiveTaxRate(settings);
+  const totalTax = afterAllowance * effectiveTaxRate / 100;
+
+  return {
+    originalGains: totalGains,
+    afterPartialExemption,
+    afterHalfIncomeTaxation: afterHalfIncome,
+    afterAllowance,
+    totalTax,
+    effectiveTaxRate: (totalTax / totalGains) * 100
+  };
+}
+
+/**
+ * Calculate monthly payout after taxes
+ */
+export function calculateMonthlyPayoutAfterTax(
+  annualWithdrawal: number,
+  annualGains: number,
+  age: number,
+  settings: TaxSettings
+): {
+  annualGross: number;
+  annualTax: number;
+  annualNet: number;
+  monthlyNet: number;
+} {
+  const taxResult = calculatePayoutTax(annualGains, age, settings);
+
+  const annualGross = annualWithdrawal;
+  const annualTax = taxResult.totalTax;
+  const annualNet = annualGross - annualTax;
+  const monthlyNet = annualNet / 12;
+
+  return {
+    annualGross,
+    annualTax,
+    annualNet,
+    monthlyNet
+  };
+}
+
+/**
  * Default German tax settings for 2024
  */
 export const DEFAULT_TAX_SETTINGS: TaxSettings = {
-  capitalGainsTaxRate: 26.375, // 25% + 5.5% Solidaritätszuschlag
-  churchTaxRate: 8, // Average church tax rate
-  allowance: 1000, // Single person allowance
-  baseRate: 2.0, // Current base rate
-  hasChurchTax: false
+  capitalGainsTaxRate: CAPITAL_GAINS_TAX_RATE_PERCENT,
+  churchTaxRate: GOVERNMENT_PARAMETERS_2024.tax.churchTaxDefaultRate * 100,
+  allowance: GOVERNMENT_PARAMETERS_2024.tax.sparerPauschbetragSingle,
+  baseRate: GOVERNMENT_PARAMETERS_2024.tax.vorabpauschaleBasiszins * 100,
+  hasChurchTax: false,
+  useHalfIncomeTaxation: false, // Halbeinkünfteverfahren ab 62
+  partialExemption: PARTIAL_EXEMPTION_PERCENT // 15% Teilfreistellung für Aktienfonds
 };

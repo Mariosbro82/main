@@ -27,9 +27,11 @@ interface OnboardingStore {
   initializeOnboarding: () => void;
   resetOnboarding: () => void;
   updatePersonalData: (data: Partial<PersonalData>) => void;
-  updateIncomeData: (data: Partial<IncomeData>) => void;
+  updateData: (data: Partial<OnboardingData>) => void;
+  updateIncomeData: (data: { income?: Partial<IncomeData>; otherIncome?: Partial<OtherIncomeData> }) => void;
   updateOtherIncomeData: (data: Partial<OtherIncomeData>) => void;
   updatePensionData: (data: Partial<PensionData>) => void;
+  updatePensionsData: (data: Partial<PensionData>) => void;
   updatePrivatePensionData: (data: Partial<PrivatePensionData>) => void;
   updateRiesterData: (data: Partial<RiesterData>) => void;
   updateRuerupData: (data: Partial<RuerupData>) => void;
@@ -38,6 +40,8 @@ interface OnboardingStore {
   updateFundsData: (data: Partial<FundsData>) => void;
   updateSavingsData: (data: Partial<SavingsData>) => void;
   updateMortgageData: (data: Partial<MortgageData>) => void;
+  updateRetirementData: (data: { privatePension?: Partial<PrivatePensionData>; riester?: Partial<RiesterData>; ruerup?: Partial<RuerupData>; occupationalPension?: Partial<OccupationalPensionData> }) => void;
+  updateAssetsData: (data: { lifeInsurance?: Partial<LifeInsuranceData>; funds?: Partial<FundsData>; savings?: Partial<SavingsData> }) => void;
   validateCurrentStep: () => boolean;
   completeOnboarding: () => void;
   resetData: () => void;
@@ -266,12 +270,15 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     const { data } = get();
     const updatedData = {
       ...data,
-      retirement: { ...data.retirement, ...newData }
+      privatePension: { ...data.privatePension, ...newData.privatePension },
+      riester: { ...data.riester, ...newData.riester },
+      ruerup: { ...data.ruerup, ...newData.ruerup },
+      occupationalPension: { ...data.occupationalPension, ...newData.occupationalPension }
     };
-    
+
     // Auto-save to storage
     OnboardingStorageService.saveData(updatedData);
-    
+
     set({ data: updatedData });
   },
 
@@ -279,12 +286,14 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     const { data } = get();
     const updatedData = {
       ...data,
-      assets: { ...data.assets, ...newData }
+      lifeInsurance: { ...data.lifeInsurance, ...newData.lifeInsurance },
+      funds: { ...data.funds, ...newData.funds },
+      savings: { ...data.savings, ...newData.savings }
     };
-    
+
     // Auto-save to storage
     OnboardingStorageService.saveData(updatedData);
-    
+
     set({ data: updatedData });
   },
 

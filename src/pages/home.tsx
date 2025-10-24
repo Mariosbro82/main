@@ -18,7 +18,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip";
 import { ProgressIndicator, LoadingOverlay, useProgressIndicator } from "@/components/ui/progress-indicator";
 import { ConfirmationDialog, ResetConfirmation, useConfirmation } from "@/components/ui/confirmation-dialog";
-import { ScreenReaderOnly, SkipLink, AccessibleField, AccessibleButton, useFocusManagement, useAnnouncer } from "@/components/ui/accessibility-helpers";
+import { ScreenReaderOnly, SkipLink, AccessibleField, AccessibleButton, useAnnouncer } from "@/components/ui/accessibility-helpers";
 import { useToast } from "@/hooks/use-toast";
 import { t } from "@/lib/i18n";
 import type { TabType, FormData } from "@/lib/types";
@@ -26,7 +26,7 @@ import type { SimulationResults } from "@/lib/types";
 import { useErrorHandler } from "@/components/ui/ErrorBoundary";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { FadeIn, SlideIn, ScaleIn, StaggerContainer, StaggerItem, ScrollReveal, HoverScale, PageTransition } from "@/components/ui/animations";
-import { User, Settings, Check, X, Download, Calculator, Info, TrendingUp, Shield, AlertCircle, Eye, EyeOff, Moon, Sun, HelpCircle } from "lucide-react";
+import { User, Settings, Check, X, Download, Calculator, Info, TrendingUp, Shield, AlertCircle, Eye, EyeOff, Moon, Sun, HelpCircle, Zap, Save, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePensionPDF } from "@/services/pdf-generator";
 
@@ -57,11 +57,20 @@ function Home() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // Enhanced UI hooks
-  const { progress, setProgress, isLoading: progressLoading } = useProgressIndicator();
-  const { showConfirmation, confirmAction, cancelAction } = useConfirmation();
-  const { focusElement, trapFocus } = useFocusManagement();
+  const {
+    status: progressStatus,
+    message: progressMessage,
+    progress: progressValue,
+    updateProgress,
+    startLoading: beginProgress,
+    setSuccess: completeProgress,
+    setError: failProgress,
+    reset: resetProgress,
+  } = useProgressIndicator();
+  const { confirmation, confirmAction } = useConfirmation();
   const { announce } = useAnnouncer();
-  const { handleError, clearError, error: globalError } = useErrorHandler();
+  const { handleError } = useErrorHandler();
+  const progress = { status: progressStatus, value: progressValue, message: progressMessage };
 
   // Memoized compound interest calculation with validation
   const calculateFutureValue = useCallback((monthlyPayment: number, annualRate: number, years: number) => {
@@ -98,7 +107,7 @@ function Home() {
   const [costSettings, setCostSettings] = useState({
     policyFeeAnnualPct: 0.004, // 0.4% - realistisch für Versicherungsgebühren
     policyFixedAnnual: 0,
-    taxRatePayout: 0.83, // 83% Besteuerungsanteil für Rente ab 2024
+    taxRatePayout: 0.17, // 17% effektive Besteuerung in der Auszahlungsphase (Standard)
     expectedReturn: 0.06, // 6.0% - realistische langfristige Aktienrendite 2024/2025
     ter: 0.008, // 0.8% - realistischer TER für aktive Fonds
     volatility: 0.18 // 18% - realistischere Volatilität für Aktienfonds
@@ -258,8 +267,9 @@ function Home() {
     mutationFn: async (data: FormData) => {
       try {
         setIsLoading(true);
-        setProgress(10);
-        announce("Simulation wird gestartet...");
+        beginProgress(language === 'de' ? 'Simulation startet...' : 'Starting simulation...');
+        updateProgress(10);
+        announce(language === 'de' ? "Simulation wird gestartet..." : "Simulation is starting...");
         
         const payload = {
           ...data,
@@ -274,36 +284,40 @@ function Home() {
           rebalancingEnabled: true,
         };
         
-        setProgress(50);
+        updateProgress(50);
         const response = await apiRequest("POST", "/api/simulate", payload);
-        setProgress(80);
+        updateProgress(80);
         const result = await response.json();
-        setProgress(100);
+        updateProgress(100);
         
         return result;
       } catch (error) {
-        handleError(error, 'simulation');
+        handleError(error as Error);
         throw error;
       }
     },
     onSuccess: (data) => {
       setSimulationResults(data);
       setIsLoading(false);
-      setProgress(0);
-      announce("Simulation erfolgreich abgeschlossen");
+      completeProgress(language === 'de' ? 'Simulation abgeschlossen' : 'Simulation complete');
+      setTimeout(() => resetProgress(), 400);
+      announce(language === 'de' ? "Simulation erfolgreich abgeschlossen" : "Simulation completed successfully");
       toast({
-        title: "🎯 Simulation abgeschlossen",
-        description: "Ihre Rentenprognose wurde erfolgreich berechnet",
+        title: language === 'de' ? "🎯 Simulation abgeschlossen" : "🎯 Simulation complete",
+        description: language === 'de' ? "Ihre Rentenprognose wurde erfolgreich berechnet" : "Your pension projection was calculated successfully",
       });
     },
     onError: (error) => {
       setIsLoading(false);
-      setProgress(0);
+      failProgress(language === 'de' ? 'Fehler bei der Simulation' : 'Simulation failed');
+      setTimeout(() => resetProgress(), 800);
       console.error('Simulation error:', error);
-      announce("Simulation fehlgeschlagen");
+      announce(language === 'de' ? "Simulation fehlgeschlagen" : "Simulation failed");
       toast({
-        title: "❌ Simulationsfehler",
-        description: "Die Berechnung konnte nicht durchgeführt werden. Bitte prüfen Sie Ihre Eingaben.",
+        title: language === 'de' ? "❌ Simulationsfehler" : "❌ Simulation error",
+        description: language === 'de'
+          ? "Die Berechnung konnte nicht durchgeführt werden. Bitte prüfen Sie Ihre Eingaben."
+          : "The calculation could not be completed. Please verify your inputs.",
         variant: "destructive",
       });
     },
@@ -382,10 +396,10 @@ function Home() {
   // Update editable values when simulation results change
   useEffect(() => {
     if (simulationResults) {
-      const monthlyPension = simulationResults.monthlyPension || 0;
-      const finalPayout = simulationResults.finalValue || 0;
-      const totalCosts = simulationResults.totalCosts || 0;
-      const effectiveReturn = simulationResults.effectiveReturn || 0;
+      const monthlyPension = simulationResults.kpis.monthlyPension || 0;
+      const finalPayout = simulationResults.kpis.projectedValue || 0;
+      const totalCosts = simulationResults.kpis.totalCosts || 0;
+      const effectiveReturn = simulationResults.kpis.netReturn || 0;
 
       setEditableValues(prev => ({
         monthlyPension: {
@@ -540,24 +554,20 @@ function Home() {
         
         {/* Loading Overlay */}
         {isLoading && (
-          <LoadingOverlay 
+          <LoadingOverlay
+            isVisible={isLoading}
             message={language === 'de' ? 'Berechnung läuft...' : 'Calculating...'}
-            description={language === 'de' ? 'Ihre Rentenprognose wird erstellt' : 'Creating your pension forecast'}
           />
         )}
         
         {/* Confirmation Dialog */}
-        <ConfirmationDialog
-          isOpen={confirmation.isOpen}
-          onConfirm={confirmation.onConfirm}
-          onCancel={confirmation.onCancel}
-          title={confirmation.title}
-          description={confirmation.description}
-          confirmText={confirmation.confirmText}
-          cancelText={confirmation.cancelText}
-          variant={confirmation.variant}
-          isLoading={confirmation.isLoading}
-        />
+        {confirmation.isOpen && (
+          <ResetConfirmation
+            onConfirm={confirmation.onConfirm}
+            onCancel={confirmation.onCancel}
+            isLoading={confirmation.isLoading}
+          />
+        )}
       {/* Enhanced Apple-style Header */}
       <FadeIn delay={0.1}>
         <header className="bg-card/95 backdrop-blur-xl border-b border-border/50 px-6 py-6 sticky top-0 z-50 animate-fade-in shadow-lg">
@@ -716,7 +726,7 @@ function Home() {
                       </div>
                     </div>
                     <div className="grid gap-10 lg:grid-cols-2 xl:grid-cols-3">
-                      <StaggerContainer delay={0.1}>
+                      <StaggerContainer staggerDelay={0.1}>
 
                       {/* Current Age */}
                       <StaggerItem>
@@ -1549,7 +1559,7 @@ function Home() {
                                 setCostSettings({
                                   policyFeeAnnualPct: 0.004,
                                   policyFixedAnnual: 0,
-                                  taxRatePayout: 0.83,
+                                  taxRatePayout: 0.17,
                                   expectedReturn: 0.06,
                                   ter: 0.008,
                                   volatility: 0.18
@@ -1574,7 +1584,7 @@ function Home() {
                               }
                             );
                           }}
-                          ariaLabel="Alle Einstellungen zurücksetzen"
+                          aria-label="Alle Einstellungen zurücksetzen"
                         >
                           {language === 'de' ? 'Zurücksetzen' : 'Reset'}
                         </AccessibleButton>
@@ -3315,13 +3325,13 @@ function Home() {
                 <div className="h-96">
                   <PensionChart
                     data={[
-                      { age: 35, year: 2024, value: 0, contributions: 0, isRetirement: false },
-                      { age: 45, year: 2034, value: 75000, contributions: 60000, isRetirement: false },
-                      { age: 55, year: 2044, value: 180000, contributions: 120000, isRetirement: false },
-                      { age: 65, year: 2054, value: 350000, contributions: 180000, isRetirement: false },
-                      { age: 67, year: 2056, value: 387500, contributions: 192000, isRetirement: true },
-                      { age: 75, year: 2064, value: 320000, contributions: 192000, isRetirement: false },
-                      { age: 85, year: 2074, value: 180000, contributions: 192000, isRetirement: false }
+                      { age: 35, year: 2024, month: 0, portfolioValue: 0, contribution: 0, fees: 0, taxes: 0, isPayoutPhase: false },
+                      { age: 45, year: 2034, month: 0, portfolioValue: 75000, contribution: 60000, fees: 0, taxes: 0, isPayoutPhase: false },
+                      { age: 55, year: 2044, month: 0, portfolioValue: 180000, contribution: 120000, fees: 0, taxes: 0, isPayoutPhase: false },
+                      { age: 65, year: 2054, month: 0, portfolioValue: 350000, contribution: 180000, fees: 0, taxes: 0, isPayoutPhase: false },
+                      { age: 67, year: 2056, month: 0, portfolioValue: 387500, contribution: 192000, fees: 0, taxes: 0, isPayoutPhase: true, payout: 1500 },
+                      { age: 75, year: 2064, month: 0, portfolioValue: 320000, contribution: 192000, fees: 0, taxes: 0, isPayoutPhase: true, payout: 1500 },
+                      { age: 85, year: 2074, month: 0, portfolioValue: 180000, contribution: 192000, fees: 0, taxes: 0, isPayoutPhase: true, payout: 1500 }
                     ]}
                     type="line"
                     height={350}

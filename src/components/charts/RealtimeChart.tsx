@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -156,6 +156,17 @@ const RealtimeChart: React.FC<RealtimeChartProps> = ({
     return null;
   };
 
+  const formatAxisCurrency = useCallback(
+    (value: number) =>
+      new Intl.NumberFormat('de-DE', {
+        style: 'currency',
+        currency: 'EUR',
+        notation: 'compact',
+        maximumFractionDigits: 1
+      }).format(value),
+    []
+  );
+
   const renderChart = () => {
     const commonProps = {
       data,
@@ -176,7 +187,7 @@ const RealtimeChart: React.FC<RealtimeChartProps> = ({
             <YAxis 
               tick={{ fontSize: 12 }}
               axisLine={{ stroke: '#e5e7eb' }}
-              tickFormatter={(value) => formatCurrency(value, true)}
+              tickFormatter={formatAxisCurrency}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
@@ -199,7 +210,7 @@ const RealtimeChart: React.FC<RealtimeChartProps> = ({
             <XAxis dataKey="year" tick={{ fontSize: 12 }} />
             <YAxis 
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => formatCurrency(value, true)}
+              tickFormatter={formatAxisCurrency}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
@@ -229,7 +240,7 @@ const RealtimeChart: React.FC<RealtimeChartProps> = ({
             <YAxis 
               tick={{ fontSize: 12 }}
               axisLine={{ stroke: '#e5e7eb' }}
-              tickFormatter={(value) => formatCurrency(value, true)}
+              tickFormatter={formatAxisCurrency}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />

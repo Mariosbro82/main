@@ -6,25 +6,25 @@ import PensionComparisonModal from '../../comparison/PensionComparisonModal';
 const RetirementStep: React.FC = () => {
   const { data, updateRetirementData } = useOnboardingStore();
   const [showComparison, setShowComparison] = useState(false);
-  
-  const retirement = data.retirement || {
-    privatePension: { contribution: 0 },
-    riester: { amount: 0 },
-    ruerup: { amount: 0 },
-    occupationalPension: { amount: 0 }
+
+  const retirement = {
+    privatePension: data.privatePension || { contribution: 0 },
+    riester: data.riester || { amount: 0 },
+    ruerup: data.ruerup || { amount: 0 },
+    occupationalPension: data.occupationalPension || { amount: 0 }
   };
-  
+
   // Check if married and calculating for both persons
   const isMarriedBoth = data.personal?.maritalStatus === 'verheiratet' && data.personal?.calcScope === 'beide_personen';
 
   const handleRetirementChange = (category: string, field: string, value: number) => {
-    const currentRetirement = data.retirement || {
-      privatePension: { contribution: 0 },
-      riester: { amount: 0 },
-      ruerup: { amount: 0 },
-      occupationalPension: { amount: 0 }
+    const currentRetirement = {
+      privatePension: data.privatePension || { contribution: 0 },
+      riester: data.riester || { amount: 0 },
+      ruerup: data.ruerup || { amount: 0 },
+      occupationalPension: data.occupationalPension || { amount: 0 }
     };
-    
+
     updateRetirementData({
       ...currentRetirement,
       [category]: {

@@ -202,33 +202,129 @@ export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
   );
 };
 
+type ConfirmationVariant = 'destructive' | 'warning' | 'info';
+
+interface ConfirmationState {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  confirmText: string;
+  cancelText: string;
+  variant: ConfirmationVariant;
+  isLoading: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+interface ConfirmationOptions {
+  title: string;
+  description: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: ConfirmationVariant;
+  onConfirm?: () => void | Promise<void>;
+  onCancel?: () => void;
+}
+
+const createDefaultState = (): ConfirmationState => ({
+  isOpen: false,
+  title: '',
+  description: '',
+  confirmText: 'Bestätigen',
+  cancelText: 'Abbrechen',
+  variant: 'warning',
+  isLoading: false,
+  onConfirm: () => {},
+  onCancel: () => {},
+});
+
 // Hook for managing confirmation states
 export const useConfirmation = () => {
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [pendingAction, setPendingAction] = React.useState<(() => void) | null>(null);
+  const [state, setState] = React.useState<ConfirmationState>(createDefaultState());
+  const confirmHandlerRef = React.useRef<(() => void | Promise<void>) | null>(null);
+  const cancelHandlerRef = React.useRef<(() => void) | null>(null);
 
-  const confirm = React.useCallback(async (action: () => void | Promise<void>) => {
-    try {
-      setIsLoading(true);
-      await action();
-    } catch (error) {
-      console.error('Confirmation action failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-      setPendingAction(null);
-    }
+  const closeDialog = React.useCallback(() => {
+    setState(createDefaultState());
+    confirmHandlerRef.current = null;
+    cancelHandlerRef.current = null;
   }, []);
 
-  const cancel = React.useCallback(() => {
-    setIsLoading(false);
-    setPendingAction(null);
-  }, []);
+  const showConfirmation = React.useCallback(
+    (options: ConfirmationOptions) => {
+      confirmHandlerRef.current = options.onConfirm ?? null;
+      cancelHandlerRef.current = options.onCancel ?? null;
+
+      const handleConfirm = async () => {
+        const handler = confirmHandlerRef.current;
+        if (!handler) {
+          closeDialog();
+          return;
+        }
+
+        const result = handler();
+        if (result && typeof (result as Promise<unknown>).then === 'function') {
+          setState((prev) => ({ ...prev, isLoading: true }));
+          try {
+            await result;
+          } catch (error) {
+            console.error('Confirmation action failed:', error);
+          } finally {
+            closeDialog();
+          }
+        } else {
+          closeDialog();
+        }
+      };
+
+      const handleCancel = () => {
+        cancelHandlerRef.current?.();
+        closeDialog();
+      };
+
+      setState({
+        isOpen: true,
+        title: options.title,
+        description: options.description,
+        confirmText: options.confirmText ?? 'Bestätigen',
+        cancelText: options.cancelText ?? 'Abbrechen',
+        variant: options.variant ?? 'warning',
+        isLoading: false,
+        onConfirm: handleConfirm,
+        onCancel: handleCancel,
+      });
+    },
+    [closeDialog],
+  );
+
+  const confirmAction = React.useCallback(
+    (
+      title: string,
+      description: string,
+      onConfirm: () => void | Promise<void>,
+      config?: Omit<ConfirmationOptions, 'title' | 'description' | 'onConfirm'>,
+    ) => {
+      showConfirmation({
+        title,
+        description,
+        onConfirm,
+        confirmText: config?.confirmText,
+        cancelText: config?.cancelText,
+        variant: config?.variant,
+        onCancel: config?.onCancel,
+      });
+    },
+    [showConfirmation],
+  );
+
+  const cancelAction = React.useCallback(() => {
+    state.onCancel();
+  }, [state]);
 
   return {
-    isLoading,
-    confirm,
-    cancel,
-    pendingAction
+    confirmation: state,
+    showConfirmation,
+    confirmAction,
+    cancelAction,
   };
 };

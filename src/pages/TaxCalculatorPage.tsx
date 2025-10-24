@@ -2,9 +2,25 @@ import React, { useState } from 'react';
 import TaxCalculator from '@/components/TaxCalculator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calculator, TrendingUp, Shield, PiggyBank } from 'lucide-react';
+import {
+  CAPITAL_GAINS_TAX_RATE_PERCENT,
+  GOVERNMENT_PARAMETERS_2024,
+} from '@/data/governmentParameters';
 
 const TaxCalculatorPage: React.FC = () => {
   const [language, setLanguage] = useState<'de' | 'en'>('de');
+
+  const ruerupMaxFormattedDE = GOVERNMENT_PARAMETERS_2024.tax.ruerupMaxContribution.toLocaleString('de-DE');
+  const ruerupMaxFormattedEN = GOVERNMENT_PARAMETERS_2024.tax.ruerupMaxContribution.toLocaleString('en-US');
+  const ruerupDeductiblePercent = Math.round(GOVERNMENT_PARAMETERS_2024.tax.ruerupDeductibleRate * 100);
+  const capitalGainsPercentDE = CAPITAL_GAINS_TAX_RATE_PERCENT.toLocaleString('de-DE', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  });
+  const capitalGainsPercentEN = CAPITAL_GAINS_TAX_RATE_PERCENT.toLocaleString('en-US', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  });
 
   const texts = {
     de: {
@@ -16,7 +32,7 @@ const TaxCalculatorPage: React.FC = () => {
           {
             icon: Shield,
             title: 'Sonderausgabenabzug',
-            description: 'Bis zu 27.566€ (2024) können als Sonderausgaben abgesetzt werden - 100% ab 2025'
+            description: `Bis zu ${ruerupMaxFormattedDE}€ (2024) können als Sonderausgaben abgesetzt werden – ${ruerupDeductiblePercent}% absetzbar, 100% ab 2025`
           },
           {
             icon: TrendingUp,
@@ -34,7 +50,7 @@ const TaxCalculatorPage: React.FC = () => {
         title: 'ETF-Besteuerung im Vergleich:',
         items: [
           'Vorabpauschale: Jährliche Besteuerung auch ohne Verkauf',
-          'Abgeltungsteuer: 26,375% auf alle Gewinne',
+          `Abgeltungsteuer: ${capitalGainsPercentDE}% auf alle Gewinne`,
           'Keine Steuervorteile bei Einzahlung',
           'Sofortige Besteuerung von Erträgen'
         ]
@@ -50,7 +66,7 @@ const TaxCalculatorPage: React.FC = () => {
           {
             icon: Shield,
             title: 'Special Expense Deduction',
-            description: 'Up to €27,566 (2024) can be deducted as special expenses - 100% from 2025'
+            description: `Up to €${ruerupMaxFormattedEN} (2024) can be deducted as special expenses – ${ruerupDeductiblePercent}% deductible, 100% from 2025`
           },
           {
             icon: TrendingUp,
@@ -68,7 +84,7 @@ const TaxCalculatorPage: React.FC = () => {
         title: 'ETF taxation in comparison:',
         items: [
           'Advance lump sum: Annual taxation even without sale',
-          'Capital gains tax: 26.375% on all profits',
+          `Capital gains tax: ${capitalGainsPercentEN}% on all profits`,
           'No tax advantages on contributions',
           'Immediate taxation of returns'
         ]
