@@ -453,71 +453,6 @@ function Home() {
     }
   };
 
-  // Download Interactive PDF Form
-  const downloadInteractiveForm = async () => {
-    try {
-      toast({
-        title: language === 'de' ? 'PDF-Formular wird erstellt...' : 'Creating PDF form...',
-        description: language === 'de' ? 'Bitte warten Sie...' : 'Please wait...'
-      });
-
-      try {
-        // Try to download from server first (for local development)
-        const response = await fetch(`/api/generate-interactive-form?language=${language}`);
-
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `pension-calculator-form-${language}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-
-          toast({
-            title: language === 'de' ? 'Interaktives Formular heruntergeladen' : 'Interactive form downloaded',
-            description: language === 'de'
-              ? 'Öffnen Sie das PDF mit Adobe Reader zum Ausfüllen und automatischen Berechnen'
-              : 'Open the PDF with Adobe Reader to fill and automatically calculate'
-          });
-          return;
-        }
-      } catch (serverError) {
-        console.log('Server not available, generating PDF client-side');
-      }
-
-      // Fallback: Generate PDF client-side for GitHub Pages
-      const { generateInteractivePensionForm } = await import('@/services/interactive-pdf-form');
-      const pdfBytes = await generateInteractivePensionForm({ language });
-
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pension-calculator-form-${language}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: language === 'de' ? 'Interaktives Formular heruntergeladen' : 'Interactive form downloaded',
-        description: language === 'de'
-          ? 'Öffnen Sie das PDF mit Adobe Reader zum Ausfüllen und automatischen Berechnen'
-          : 'Open the PDF with Adobe Reader to fill and automatically calculate'
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      toast({
-        title: language === 'de' ? 'Download Fehler' : 'Download Error',
-        description: language === 'de' ? 'Formular konnte nicht heruntergeladen werden' : 'Could not download form',
-        variant: 'destructive'
-      });
-    }
-  };
-
   // Memoized chart data to prevent unnecessary re-calculations
   const combinedChartData = useMemo(() => {
     if (!simulationResults) return [];
@@ -2445,20 +2380,6 @@ function Home() {
                             <div className="absolute inset-0 bg-gradient-to-r from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <Download className="w-5 h-5 mr-2" />
                             {language === 'de' ? 'PDF Bericht' : 'PDF Report'}
-                          </Button>
-                        </EnhancedTooltip>
-
-                        <EnhancedTooltip content={language === 'de' ? 'Laden Sie ein interaktives PDF-Formular herunter, das selbst rechnet' : 'Download an interactive PDF form that calculates automatically'}>
-                          <Button
-                            variant="outline"
-                            className="apple-button-outline h-14 text-base font-medium relative group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-                            onClick={downloadInteractiveForm}
-                            disabled={isLoading}
-                            data-testid="button-download-form"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <Calculator className="w-5 h-5 mr-2" />
-                            {language === 'de' ? 'Rechnendes PDF' : 'Calculating PDF'}
                           </Button>
                         </EnhancedTooltip>
 
