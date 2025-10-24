@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { calculatePrivatePensionClient } from "@/utils/calculatePension";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -12,6 +13,43 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // For /api/simulate endpoint, use client-side calculation as fallback for GitHub Pages
+  if (url === '/api/simulate' && method === 'POST' && data) {
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: data ? { "Content-Type": "application/json" } : {},
+        body: data ? JSON.stringify(data) : undefined,
+        credentials: "include",
+      });
+
+      // If server is available, use it
+      if (res.ok) {
+        return res;
+      }
+
+      // If server is not available (GitHub Pages), use client-side calculation
+      console.log('Server not available, using client-side calculation');
+      const result = calculatePrivatePensionClient(data as any);
+
+      // Create a mock Response object
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      // If fetch fails (no server), use client-side calculation
+      console.log('Using client-side calculation (no server)');
+      const result = calculatePrivatePensionClient(data as any);
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // For other endpoints, use regular fetch
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
