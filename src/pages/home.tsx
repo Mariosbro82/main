@@ -453,6 +453,47 @@ function Home() {
     }
   };
 
+  // Download Interactive PDF Form
+  const downloadInteractiveForm = async () => {
+    try {
+      toast({
+        title: language === 'de' ? 'PDF-Formular wird erstellt...' : 'Creating PDF form...',
+        description: language === 'de' ? 'Bitte warten Sie...' : 'Please wait...'
+      });
+
+      // Download the interactive form from the server
+      const response = await fetch(`/api/generate-interactive-form?language=${language}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to generate form');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pension-calculator-form-${language}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: language === 'de' ? 'Interaktives Formular heruntergeladen' : 'Interactive form downloaded',
+        description: language === 'de'
+          ? 'Öffnen Sie das PDF mit Adobe Reader zum Ausfüllen und automatischen Berechnen'
+          : 'Open the PDF with Adobe Reader to fill and automatically calculate'
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: language === 'de' ? 'Download Fehler' : 'Download Error',
+        description: language === 'de' ? 'Formular konnte nicht heruntergeladen werden' : 'Could not download form',
+        variant: 'destructive'
+      });
+    }
+  };
+
   // Memoized chart data to prevent unnecessary re-calculations
   const combinedChartData = useMemo(() => {
     if (!simulationResults) return [];
@@ -2370,19 +2411,33 @@ function Home() {
                         </EnhancedTooltip>
                         
                         <EnhancedTooltip content={language === 'de' ? 'Exportieren Sie einen detaillierten PDF-Bericht Ihrer Simulation' : 'Export a detailed PDF report of your simulation'}>
-                          <Button 
-                            variant="secondary" 
-                            className="apple-button-secondary h-14 text-base font-medium relative group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]" 
+                          <Button
+                            variant="secondary"
+                            className="apple-button-secondary h-14 text-base font-medium relative group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
                             onClick={exportToPDF}
                             disabled={!simulationResults || isLoading}
                             data-testid="button-export-report"
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <Download className="w-5 h-5 mr-2" />
-                            {language === 'de' ? 'PDF Export' : 'PDF Export'}
+                            {language === 'de' ? 'PDF Bericht' : 'PDF Report'}
                           </Button>
                         </EnhancedTooltip>
-                        
+
+                        <EnhancedTooltip content={language === 'de' ? 'Laden Sie ein interaktives PDF-Formular herunter, das selbst rechnet' : 'Download an interactive PDF form that calculates automatically'}>
+                          <Button
+                            variant="outline"
+                            className="apple-button-outline h-14 text-base font-medium relative group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+                            onClick={downloadInteractiveForm}
+                            disabled={isLoading}
+                            data-testid="button-download-form"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <Calculator className="w-5 h-5 mr-2" />
+                            {language === 'de' ? 'Rechnendes PDF' : 'Calculating PDF'}
+                          </Button>
+                        </EnhancedTooltip>
+
                         <EnhancedTooltip content={language === 'de' ? 'Vergleichen Sie verschiedene Anlagestrategien miteinander' : 'Compare different investment strategies'}>
                           <Button 
                             variant="outline" 

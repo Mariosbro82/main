@@ -5,6 +5,7 @@ import { insertScenarioSchema, insertPrivatePensionPlanSchema } from "@shared/sc
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { calculatePrivatePension } from "./services/financial-calculator";
+import { generateInteractivePensionForm } from "../src/services/interactive-pdf-form";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Scenarios endpoints
@@ -255,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { type } = req.params;
       const { value, age, term } = req.query;
-      
+
       const infoContent = {
         age: {
           title: "Alter bei Rentenbeginn",
@@ -294,15 +295,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ]
         }
       };
-      
+
       const content = infoContent[type as keyof typeof infoContent];
       if (!content) {
         return res.status(404).json({ message: "Info content not found" });
       }
-      
+
       res.json(content);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch info content" });
+    }
+  });
+
+  // Generate Interactive PDF Form endpoint
+  app.get("/api/generate-interactive-form", async (req, res) => {
+    try {
+      const language = (req.query.language as 'de' | 'en') || 'de';
+
+      // Generate the interactive PDF form
+      const pdfBytes = await generateInteractivePensionForm({ language });
+
+      // Set response headers
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="pension-calculator-form-${language}.pdf"`
+      );
+      res.setHeader('Content-Length', pdfBytes.length);
+
+      // Send the PDF
+      res.send(Buffer.from(pdfBytes));
+    } catch (error) {
+      console.error('Error generating interactive PDF form:', error);
+      res.status(500).json({ message: "Failed to generate interactive PDF form" });
     }
   });
 
