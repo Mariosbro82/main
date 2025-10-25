@@ -12,14 +12,9 @@ function resolveBase(mode: string): string {
     return explicitBase.endsWith("/") ? explicitBase : `${explicitBase}/`;
   }
 
-  // Derive GitHub Pages base path automatically when building for production
+  // For GitHub Pages, always use /app/ as base path
   if (mode === "production") {
-    const repoName =
-      process.env.GITHUB_REPOSITORY?.split("/")[1] ??
-      path.basename(__dirname);
-    if (repoName) {
-      return `/${repoName.replace(/^\/+|\/+$/g, "")}/`;
-    }
+    return "/app/";
   }
 
   return "/";
