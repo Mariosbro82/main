@@ -14,33 +14,30 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    // Add timeout to prevent infinite loading
-    const loadTimeout = setTimeout(() => {
-      console.warn('Loading timeout - skipping onboarding');
-      setIsLoading(false);
-      setShowOnboarding(false);
-    }, 5000);
-
-    // Load saved onboarding data on mount
+    // EMERGENCY FIX: Always skip onboarding and show the app
+    // This prevents any white page issues from onboarding system
     const loadData = async () => {
       try {
         await loadFromStorage();
-        setShowOnboarding(!isCompleted);
+        // ALWAYS skip onboarding - just show the app
+        setShowOnboarding(false);
       } catch (error) {
         console.error('Failed to load onboarding data:', error);
-        setError(error instanceof Error ? error.message : 'Unknown error');
         // On error, skip onboarding to show the app
         setShowOnboarding(false);
       } finally {
-        clearTimeout(loadTimeout);
         setIsLoading(false);
       }
     };
 
-    loadData();
+    // Set a 1-second max timeout to always show something
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowOnboarding(false);
+    }, 1000);
 
-    return () => clearTimeout(loadTimeout);
-  }, [loadFromStorage, isCompleted]);
+    loadData();
+  }, [loadFromStorage]);
 
   // Skip onboarding function for debugging
   const handleSkipOnboarding = () => {
@@ -54,19 +51,13 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
     }
   };
 
-  // Show loading spinner while checking onboarding status
+  // Show loading spinner while checking onboarding status (max 1 second)
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Lade Anwendung...</p>
-          <button
-            onClick={() => setIsLoading(false)}
-            className="mt-4 text-sm text-blue-600 hover:underline"
-          >
-            Laden überspringen
-          </button>
         </div>
       </div>
     );
