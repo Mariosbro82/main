@@ -82,7 +82,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteScenario(id: string): Promise<boolean> {
     const result = await db.delete(scenarios).where(eq(scenarios.id, id));
-    return (result.changes ?? 0) > 0;
+    // postgres-js driver returns { count }, not { changes }
+    return ((result as any).count ?? 0) > 0;
   }
 
   // Private Pension Plans
@@ -114,7 +115,8 @@ export class DatabaseStorage implements IStorage {
 
   async deletePrivatePensionPlan(id: string): Promise<boolean> {
     const result = await db.delete(privatePensionPlans).where(eq(privatePensionPlans.id, id));
-    return (result.changes ?? 0) > 0;
+    // postgres-js driver returns { count }, not { changes }
+    return ((result as any).count ?? 0) > 0;
   }
 }
 

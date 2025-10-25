@@ -4,17 +4,39 @@ import { storage } from "./storage";
 import { insertScenarioSchema, insertPrivatePensionPlanSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { calculatePrivatePension } from "./services/financial-calculator";
-import { generateInteractivePensionForm } from "../src/services/interactive-pdf-form";
+import { calculatePrivatePension } from "../shared/utils/financial-calculator";
+import { generateInteractivePensionForm } from "../shared/services/interactive-pdf-form";
+import { logger } from "./utils/logger";
+import { cacheMiddleware, getCacheStats } from "./middleware/cache";
+import { registerAuthRoutes } from "./routes/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Scenarios endpoints
-  app.get("/api/scenarios", async (req, res) => {
+  // Register authentication routes
+  registerAuthRoutes(app);
+
+  // Health check endpoint
+  app.get("/health", (req, res) => {
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+    });
+  });
+
+  // Cache stats endpoint (for monitoring)
+  app.get("/api/cache/stats", (req, res) => {
+    const stats = getCacheStats();
+    res.json(stats);
+  });
+
+  // Scenarios endpoints with caching
+  app.get("/api/scenarios", cacheMiddleware(300), async (req, res) => {
     try {
       const scenarios = await storage.getScenarios();
       res.json(scenarios);
     } catch (error) {
-      console.error('GET /api/scenarios - Error:', error);
+      logger.error('GET /api/scenarios - Error:', error);
       res.status(500).json({ message: "Failed to fetch scenarios" });
     }
   });
@@ -37,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scenario = await storage.createScenario(validatedData);
       res.status(201).json(scenario);
     } catch (error) {
-      console.error('POST /api/scenarios - Error:', error);
+      logger.error('POST /api/scenarios - Error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: fromZodError(error).toString() });
       }
@@ -136,10 +158,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simulation endpoint
+  // Simulation endpoint - accepts ad-hoc calculations without requiring a persisted scenario
   app.post("/api/simulate", async (req, res) => {
     try {
-      const validatedData = insertPrivatePensionPlanSchema.parse(req.body);
+      // Create a schema that makes scenarioId optional for simulations
+      const simulationSchema = insertPrivatePensionPlanSchema.extend({
+        scenarioId: z.string().default('temp-simulation'),
+      });
+
+      const validatedData = simulationSchema.parse(req.body);
       const simulation = calculatePrivatePension(validatedData);
       res.json(simulation);
     } catch (error) {
@@ -326,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send the PDF
       res.send(Buffer.from(pdfBytes));
     } catch (error) {
-      console.error('Error generating interactive PDF form:', error);
+      logger.error('Error generating interactive PDF form:', error);
       res.status(500).json({ message: "Failed to generate interactive PDF form" });
     }
   });
