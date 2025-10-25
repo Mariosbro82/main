@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { X, Calculator, TrendingUp, PiggyBank, Info, BarChart3, Euro } from 'lucide-react';
 import { runPensionComparison, createDefaultSimulationParams, SimulationResult } from '../../utils/pensionSimulation';
 import { DEFAULT_TAX_SETTINGS, TaxSettings } from '../../utils/germanTaxCalculations';
@@ -396,4 +396,5 @@ const PensionComparisonModal: React.FC<PensionComparisonModalProps> = ({ isOpen,
   );
 };
 
-export default PensionComparisonModal;
+// Memoize modal to prevent unnecessary re-renders when closed
+export default memo(PensionComparisonModal);

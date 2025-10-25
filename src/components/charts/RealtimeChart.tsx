@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import {
   LineChart,
   Line,
@@ -297,4 +297,5 @@ const RealtimeChart: React.FC<RealtimeChartProps> = ({
   );
 };
 
-export default RealtimeChart;
+// Memoize component to prevent unnecessary re-renders
+export default memo(RealtimeChart);
