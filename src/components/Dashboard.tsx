@@ -222,8 +222,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
     const totalRetirementIncome =
       totalStatutoryPension + riesterAmount + ruerupAmount + occupationalAmount + privatePensionMonthlyPayout;
     const replacementRatio = netMonthly > 0 ? (totalRetirementIncome / netMonthly) * 100 : 0;
-    // Coverage gap calculation per specification: Gap = (Net Income × 0.8) – (Statutory Pension + Private Pension)
-    const pensionGap = Math.max(0, netMonthly * 0.8 - (totalStatutoryPension + privatePensionMonthlyPayout));
+    // Coverage gap calculation: Gap = (Net Income × 0.8) – Total Retirement Income
+    // Includes ALL retirement income sources for accurate coverage assessment
+    const pensionGap = Math.max(0, netMonthly * 0.8 - totalRetirementIncome);
 
     return {
       age: personal.age || 0,
