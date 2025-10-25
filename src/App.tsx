@@ -44,7 +44,7 @@ function Router() {
     <WouterRouter base={base}>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/calculator" component={Home} />
+        <Route path="/calculator" component={Dashboard} />
         <Route path="/questions" component={Questions} />
         <Route path="/tax-calculator" component={TaxCalculatorPage} />
         <Route path="/impressum">
