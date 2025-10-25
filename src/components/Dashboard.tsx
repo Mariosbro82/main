@@ -27,6 +27,11 @@ import { useOnboardingStore } from '@/stores/onboardingStore';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  calculateRiester,
+  calculateOccupationalPension,
+  calculateCompoundInterest,
+} from '@/utils/pensionCalculators';
 
 interface DashboardProps {
   language?: 'de' | 'en';
@@ -187,7 +192,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
       ? (privatePension.contribution_A || 0) + (privatePension.contribution_B || 0)
       : privatePension.contribution || 0;
 
-    // Estimate monthly payout from private pension based on contributions
+    // Estimate monthly payout from private pension using CORRECT monthly compounding
     // Assumptions: 5% return, accumulation from current age to 67, then 4% withdrawal rate
     const currentAge = personal.age || 30;
     const retirementAge = 67;
@@ -197,16 +202,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
 
     let privatePensionMonthlyPayout = 0;
     if (privatePensionContribution > 0 && yearsToRetirement > 0) {
-      // Future value of monthly contributions (annuity)
-      const monthlyRate = expectedReturn / 12;
-      const totalMonths = yearsToRetirement * 12;
-      const futureValue = privatePensionContribution *
-        ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate) *
-        (1 + monthlyRate);
+      // Use CORRECT monthly compounding calculator (fixes ISS-001)
+      const result = calculateCompoundInterest({
+        principal: 0,
+        monthlyContribution: privatePensionContribution,
+        annualReturn: expectedReturn,
+        years: yearsToRetirement,
+      });
 
       // Convert to monthly payout using withdrawal rate
-      privatePensionMonthlyPayout = (futureValue * withdrawalRate) / 12;
+      privatePensionMonthlyPayout = (result.futureValue * withdrawalRate) / 12;
     }
+
+    // Calculate Riester subsidies (ISS-003)
+    const grossAnnualIncome = isMarriedBoth
+      ? ((income.netMonthly_A || 0) + (income.netMonthly_B || 0)) * 12 * 1.3 // Estimate gross from net
+      : (income.netMonthly || 0) * 12 * 1.3;
+
+    const riesterResult = riesterAmount > 0 ? calculateRiester({
+      grossAnnualIncome,
+      children: personal.children?.count || 0,
+      contribution: riesterAmount * 12, // Convert monthly to annual
+    }) : null;
+
+    // Calculate Occupational pension tax savings (ISS-004)
+    const marginalTaxRate = grossAnnualIncome > 66760 ? 0.42 : grossAnnualIncome > 31400 ? 0.35 : 0.25;
+    const occupationalResult = occupationalAmount > 0 ? calculateOccupationalPension({
+      monthlyContribution: occupationalAmount,
+      marginalTaxRate,
+    }) : null;
 
     const lifeInsuranceSum = isMarriedBoth
       ? (lifeInsurance.sum_A || 0) + (lifeInsurance.sum_B || 0)
@@ -240,6 +264,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
       totalAssets,
       replacementRatio,
       pensionGap,
+      // New calculator results
+      riesterSubsidy: riesterResult?.totalSubsidy || 0,
+      riesterNetCost: riesterResult?.netCost || 0,
+      riesterSubsidyRate: riesterResult?.subsidyRate || 0,
+      occupationalTaxSavings: occupationalResult?.totalSavings || 0,
+      occupationalNetCost: occupationalResult?.netCost || 0,
+      occupationalSavingsRate: occupationalResult?.savingsRate || 0,
     };
   }, [data]);
 
