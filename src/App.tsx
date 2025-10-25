@@ -12,11 +12,12 @@ import NotFound from "@/pages/not-found";
 import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-// Get base path from environment (matches vite.config.ts)
-// Note: Vite handles asset paths with BASE_URL, but Wouter router works better without it
-// for GitHub Pages deployment. Routes will work at /app/ automatically because
-// the SPA redirect script in index.html handles path rewriting.
-const base = import.meta.env.BASE_URL;
+// Normalize Vite's BASE_URL for Wouter so GitHub Pages paths like /app/... resolve correctly.
+const rawBase = import.meta.env.BASE_URL ?? "/";
+const routerBase =
+  rawBase === "/"
+    ? undefined
+    : rawBase.replace(/\/+$/, "") || undefined;
 
 // Lazy load ALL pages for optimal performance and code splitting
 const Dashboard = lazy(() => import("@/pages/dashboard"));
@@ -39,7 +40,7 @@ const PageLoader = () => (
 
 function Router() {
   return (
-    <WouterRouter>
+    <WouterRouter base={routerBase}>
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Dashboard} />

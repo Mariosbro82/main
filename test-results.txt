@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════════════════════
+  ACCEPTANCE TESTS - Critical Pension Calculator Fixes
+═══════════════════════════════════════════════════════════════
+
+🔍 TEST SUITE 1: ISS-001 - Rürup Monthly Compounding Fix
+
+Test 1.1: Basic monthly compounding (500 EUR/month, 6.5%, 30 years)
+✅ PASS: Monthly compounding with 500/month
+   Expected: 553089.00 EUR, Actual: 553089.04 EUR, Diff: 0.0437 EUR
+
+Test 1.2: Verify correct formula vs annuity due
+✅ PASS: Using ordinary annuity formula (payment at end of period)
+
+Test 1.3: Different parameters (1000 EUR/month, 7%, 20 years)
+✅ PASS: Monthly compounding with 1000/month
+   Expected: 520927.00 EUR, Actual: 520926.66 EUR, Diff: 0.3402 EUR
+
+Test 1.4: With initial principal (10k principal, 500/month, 6%, 25 years)
+✅ PASS: Compounding with principal + contributions
+   Expected: 391147.00 EUR, Actual: 391146.68 EUR, Diff: 0.3207 EUR
+
+
+🔍 TEST SUITE 2: ISS-003 - Riester Subsidy Calculator
+
+Test 2.1: Basic subsidies (60k income, 2 children, 2400 EUR contribution)
+✅ PASS: Grundzulage = 175 EUR
+   Value: 175
+✅ PASS: Kinderzulage = 600 EUR (2 × 300)
+   Expected: 600.00 EUR, Actual: 600.00 EUR, Diff: 0.0000 EUR
+✅ PASS: Total subsidy = 775 EUR
+   Expected: 775.00 EUR, Actual: 775.00 EUR, Diff: 0.0000 EUR
+❌ FAIL: Net cost = 1625 EUR
+   Expected: 1625.00 EUR, Actual: 1325.00 EUR, Diff: 300.0000 EUR
+   Tolerance: ±0.01 EUR

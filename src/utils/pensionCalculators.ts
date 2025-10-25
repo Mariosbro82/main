@@ -330,12 +330,12 @@ export function calculateCompoundInterest(
   let totalContributions = 0;
 
   for (let month = 0; month < months; month++) {
-    // Add monthly contribution
+    // Apply monthly return to current balance FIRST
+    portfolioValue *= (1 + monthlyRate);
+
+    // Then add monthly contribution at END of month
     portfolioValue += monthlyContribution;
     totalContributions += monthlyContribution;
-
-    // Apply monthly return
-    portfolioValue *= (1 + monthlyRate);
   }
 
   // Calculate breakdowns
