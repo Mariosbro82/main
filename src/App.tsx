@@ -16,9 +16,17 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 // For GitHub Pages, this will be "/app/" in production, "/" in development
 const base = import.meta.env.BASE_URL;
 
-// Custom location hook for GitHub Pages subdirectory deployment
-// This hook strips the base path from the URL so Wouter can match routes correctly
-const useHashLocation = (): [string, (to: string, options?: any) => void] => {
+/**
+ * Custom location hook for GitHub Pages subdirectory deployment.
+ *
+ * This hook enables clean URLs (without hash routing) for subdirectory deployments
+ * by normalizing paths between the browser and Wouter router:
+ * - Strips the base path (/app/) from browser URLs for route matching
+ * - Adds the base path back when navigating to maintain correct URLs
+ *
+ * Example: Browser sees "/app/calculator" → Router matches "/calculator"
+ */
+const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void] => {
   const [loc, setLoc] = useState(() => {
     const path = window.location.pathname;
     // Remove base path from pathname for route matching
@@ -90,7 +98,7 @@ const PageLoader = () => (
 
 function Router() {
   return (
-    <WouterRouter hook={useHashLocation}>
+    <WouterRouter hook={useGitHubPagesLocation}>
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Dashboard} />
