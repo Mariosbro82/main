@@ -1,0 +1,109 @@
+<!DOCTYPE html><html lang="de"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Professioneller Rentenrechner für gesetzliche, private und betriebliche Altersvorsorge. Berechnen Sie Ihre Rente, vergleichen Sie Anlageformen und optimieren Sie Ihre Altersvorsorge.">
+    <meta name="keywords" content="Rentenrechner, Altersvorsorge, private Rente, gesetzliche Rente, Ruhestandsplanung, Finanzplanung, Pensionsrechner">
+    <meta name="author" content="Vista Pension Calculator">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="German">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mariosbro82.github.io/app/">
+    <meta property="og:title" content="Vista Pension Calculator - Ihre Altersvorsorge im Blick">
+    <meta property="og:description" content="Berechnen Sie Ihre gesetzliche, private und betriebliche Rente. Vergleichen Sie Anlageformen und optimieren Sie Ihre Altersvorsorge.">
+    <meta property="og:locale" content="de_DE">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://mariosbro82.github.io/app/">
+    <meta name="twitter:title" content="Vista Pension Calculator - Ihre Altersvorsorge im Blick">
+    <meta name="twitter:description" content="Professioneller Rentenrechner für alle Arten der Altersvorsorge">
+
+    <!-- PWA / Mobile App -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Vista Pension">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Vista Pension Calculator">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/app/manifest.json">
+
+    <!-- Performance & Security -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter:wght@400&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+
+    <title>Vista Pension Calculator - Professioneller Rentenrechner für Ihre Altersvorsorge</title>
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Vista Pension Calculator",
+      "description": "Professioneller Rentenrechner für gesetzliche, private und betriebliche Altersvorsorge",
+      "url": "https://mariosbro82.github.io/app/",
+      "applicationCategory": "FinanceApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript. Modern browser recommended.",
+      "inLanguage": "de-DE"
+    }
+    </script>
+
+    <!-- Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      // This script checks to see if a redirect is present in the query string,
+      // converts it back into the correct url and adds it to the
+      // browser's history using window.history.replaceState(...),
+      // which won't cause the browser to attempt to load the new url.
+      // When the single page app is loaded further down in this file,
+      // the correct url will be waiting in the browser's history for
+      // the single page app to route accordingly.
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; padding: 20px; text-align: center;">
+        <div style="max-width: 600px; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+          <h1 style="color: #1e293b; margin-bottom: 20px; font-size: 28px;">JavaScript Required</h1>
+          <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+            Vista Pension Calculator requires JavaScript to function properly. Please enable JavaScript in your browser settings and reload the page.
+          </p>
+          <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin-top: 20px;">
+            <strong style="color: #475569; display: block; margin-bottom: 10px;">Why do we need JavaScript?</strong>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin: 0;">
+              Our pension calculator performs complex calculations and visualizations that require modern web technologies to provide you with accurate, real-time results.
+            </p>
+          </div>
+        </div>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
