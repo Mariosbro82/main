@@ -43,19 +43,26 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
       }
     };
 
-    // Safety timeout: Always show something after 1 second
-    // This prevents infinite loading if loadFromStorage hangs
-    const timeoutId = setTimeout(() => {
-      if (isMounted && !dataLoaded) {
-        dataLoaded = true;
+  // Safety timeout: Always show something after 1 second
+  // This prevents infinite loading if loadFromStorage hangs
+  const timeoutId = setTimeout(() => {
+    if (isMounted && !dataLoaded) {
+      dataLoaded = true;
+      try {
         // Use centralized validation (single source of truth)
         const persistedData = OnboardingStorageService.loadData();
         const completed = OnboardingStorageService.isCompleted(persistedData);
         console.log('[OnboardingContainer] Timeout triggered, completed:', completed);
         setShowOnboarding(!completed);
         setIsLoading(false);
+      } catch (error) {
+        console.error('[OnboardingContainer] Timeout fallback failed:', error);
+        // Ultimate fallback: show main app
+        setShowOnboarding(false);
+        setIsLoading(false);
       }
-    }, 1000);
+    }
+  }, 1000);
 
     loadData();
 

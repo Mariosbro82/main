@@ -23,6 +23,7 @@ export class OnboardingStorageService {
       localStorage.removeItem(test);
       return true;
     } catch (e) {
+      console.warn('localStorage not available:', e);
       return false;
     }
   }

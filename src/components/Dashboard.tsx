@@ -144,6 +144,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
   const { data, isCompleted } = useOnboardingStore();
   const [, setLocation] = useLocation();
 
+  // Bulletproof error handling for Dashboard
+  try {
+
   const summary = useMemo(() => {
     const personal = data.personal || {};
     const income = data.income || {};
@@ -648,6 +651,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
       </div>
     </div>
   );
+  } catch (error) {
+    console.error('[Dashboard] Critical error:', error);
+    // Ultimate fallback: show simple welcome screen
+    return (
+      <div className="min-h-screen bg-background py-10">
+        <div className="container px-4 md:px-6">
+          <header className="mb-10">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Vista Pension Calculator
+            </h1>
+            <p className="mt-2 text-base text-muted-foreground sm:text-lg">
+              Professioneller Rentenrechner für Ihre Altersvorsorge
+            </p>
+          </header>
+          <div className="flex flex-col items-center justify-center py-20">
+            <Card className="max-w-2xl w-full">
+              <CardContent className="flex flex-col items-center text-center py-12 px-6">
+                <div className="mb-6 rounded-full bg-primary/10 p-6">
+                  <User className="h-16 w-16 text-primary" />
+                </div>
+                <h2 className="text-2xl font-semibold mb-3 text-foreground">
+                  Willkommen!
+                </h2>
+                <p className="text-muted-foreground mb-8 max-w-md">
+                  Starten Sie mit der Berechnung Ihrer Altersvorsorge.
+                </p>
+                <Button
+                  size="lg"
+                  onClick={() => setLocation('/calculator')}
+                  className="gap-2"
+                >
+                  Jetzt starten
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default Dashboard;

@@ -101,8 +101,16 @@ function Router() {
     <WouterRouter hook={useGitHubPagesLocation}>
       <Suspense fallback={<PageLoader />}>
         <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/calculator" component={Dashboard} />
+          <Route path="/">
+            <ErrorBoundary>
+              <Dashboard />
+            </ErrorBoundary>
+          </Route>
+          <Route path="/calculator">
+            <ErrorBoundary>
+              <Dashboard />
+            </ErrorBoundary>
+          </Route>
           <Route path="/fonds">
             <Home initialTab="funds" />
           </Route>
