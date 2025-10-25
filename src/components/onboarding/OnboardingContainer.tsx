@@ -24,14 +24,10 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
 
         if (isMounted && !dataLoaded) {
           dataLoaded = true;
-          // Derive completion from actual persisted data (single source of truth)
+          // Use centralized validation (single source of truth)
           const persistedData = OnboardingStorageService.loadData();
-          // If loadData returns null (version mismatch/error), treat as incomplete
-          // If it returns data, check for completedAt presence/validity
-          const completed = persistedData?.completedAt !== undefined &&
-                           typeof persistedData.completedAt === 'string' &&
-                           persistedData.completedAt.length > 0;
-          console.log('[OnboardingContainer] Data loaded, completed:', completed, 'completedAt:', persistedData?.completedAt);
+          const completed = OnboardingStorageService.isCompleted(persistedData);
+          console.log('[OnboardingContainer] Data loaded, completed:', completed);
           setShowOnboarding(!completed);
           setIsLoading(false);
         }
@@ -52,12 +48,10 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
     const timeoutId = setTimeout(() => {
       if (isMounted && !dataLoaded) {
         dataLoaded = true;
-        // Derive completion from persisted data, not boolean flag
+        // Use centralized validation (single source of truth)
         const persistedData = OnboardingStorageService.loadData();
-        const completed = persistedData?.completedAt !== undefined &&
-                         typeof persistedData.completedAt === 'string' &&
-                         persistedData.completedAt.length > 0;
-        console.log('[OnboardingContainer] Timeout triggered, completed:', completed, 'completedAt:', persistedData?.completedAt);
+        const completed = OnboardingStorageService.isCompleted(persistedData);
+        console.log('[OnboardingContainer] Timeout triggered, completed:', completed);
         setShowOnboarding(!completed);
         setIsLoading(false);
       }

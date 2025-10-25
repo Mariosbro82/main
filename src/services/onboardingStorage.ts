@@ -103,12 +103,13 @@ export class OnboardingStorageService {
 
   // Check if onboarding is completed (single source of truth)
   // This checks the actual data for completedAt field
-  isOnboardingCompleted(): boolean {
-    const data = this.loadData();
+  // Accepts optional data parameter to avoid redundant loads
+  isOnboardingCompleted(data?: Partial<OnboardingData> | null): boolean {
+    const dataToCheck = data !== undefined ? data : this.loadData();
     // Return true only if completedAt exists and is a valid ISO string
-    return data?.completedAt !== undefined &&
-           typeof data.completedAt === 'string' &&
-           data.completedAt.length > 0;
+    return dataToCheck?.completedAt !== undefined &&
+           typeof dataToCheck.completedAt === 'string' &&
+           dataToCheck.completedAt.length > 0;
   }
 
   // Mark onboarding as completed
@@ -150,8 +151,8 @@ export class OnboardingStorageService {
   }
 
   // Delegates to the instance method for single source of truth
-  static isCompleted(): boolean {
-    return OnboardingStorageService.getInstance().isOnboardingCompleted();
+  static isCompleted(data?: Partial<OnboardingData> | null): boolean {
+    return OnboardingStorageService.getInstance().isOnboardingCompleted(data);
   }
 
   // Auto-save with debouncing
