@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.claude/commands/
+.claude/agents/
+.claude/CLAUDE_RESOURCES_QUICK_START.md
