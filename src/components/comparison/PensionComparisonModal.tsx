@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { X, Calculator, TrendingUp, PiggyBank, Info, BarChart3, Euro } from 'lucide-react';
 import { runPensionComparison, createDefaultSimulationParams, SimulationResult } from '../../utils/pensionSimulation';
 import { DEFAULT_TAX_SETTINGS, TaxSettings } from '../../utils/germanTaxCalculations';
@@ -43,8 +43,8 @@ const PensionComparisonModal: React.FC<PensionComparisonModalProps> = ({ isOpen,
   const [isCalculating, setIsCalculating] = useState(false);
   const [chartType, setChartType] = useState<'area' | 'line'>('area');
   
-  const pensionContribution = data.retirement?.privatePension?.contribution ||
-    data.retirement?.privatePension?.contribution_A || 0;
+  const pensionContribution = data.privatePension?.contribution ||
+    data.privatePension?.contribution_A || 0;
   const pensionGuarantee = pensionContribution * 0.8;
   
   const taxSettings: TaxSettings = useMemo(() => ({
@@ -102,8 +102,8 @@ const PensionComparisonModal: React.FC<PensionComparisonModalProps> = ({ isOpen,
       age: yearData.age,
       fundNetValue: yearData.fundNetValue,
       pensionValue: yearData.pensionValue,
-      fundTotalTax: yearData.fundTotalTax,
-      pensionTotalTax: yearData.pensionTotalTax
+      fundTotalTax: yearData.fundTaxPaid,
+      pensionTotalTax: yearData.pensionTaxPaid
     }));
   }, [simulationResult]);
 
@@ -215,13 +215,13 @@ const PensionComparisonModal: React.FC<PensionComparisonModalProps> = ({ isOpen,
                     <div className="flex justify-between">
                       <span className="text-gray-600">Netto mit 67:</span>
                       <span className="font-semibold text-green-600">
-                        {formatCurrency(simulationResult.fundResults.netValueAt67)}
+                        {formatCurrency(simulationResult.summary.at67.fundNetValue)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Netto mit 85:</span>
                       <span className="font-semibold text-green-600">
-                        {formatCurrency(simulationResult.fundResults.netValueAt85)}
+                        {formatCurrency(simulationResult.summary.at85.fundNetValue)}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
@@ -239,13 +239,13 @@ const PensionComparisonModal: React.FC<PensionComparisonModalProps> = ({ isOpen,
                     <div className="flex justify-between">
                       <span className="text-gray-600">Netto mit 67:</span>
                       <span className="font-semibold text-blue-600">
-                        {formatCurrency(simulationResult.pensionResults.netValueAt67)}
+                        {formatCurrency(simulationResult.summary.at67.pensionValue)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Netto mit 85:</span>
                       <span className="font-semibold text-blue-600">
-                        {formatCurrency(simulationResult.pensionResults.netValueAt85)}
+                        {formatCurrency(simulationResult.summary.at85.pensionValue)}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
@@ -396,4 +396,5 @@ const PensionComparisonModal: React.FC<PensionComparisonModalProps> = ({ isOpen,
   );
 };
 
-export default PensionComparisonModal;
+// Memoize modal to prevent unnecessary re-renders when closed
+export default memo(PensionComparisonModal);

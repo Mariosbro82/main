@@ -9,7 +9,8 @@ import AssetsStep from './steps/AssetsStep';
 import MortgageStep from './steps/MortgageStep';
 import SummaryStep from './steps/SummaryStep';
 import LoadingSpinner from '../ui/loading-spinner';
-import { ProgressIndicator } from '../ui/progress-indicator';
+// Progress indicator removed - using custom progress bar instead
+// import { ProgressIndicator } from '../ui/progress-indicator';
 
 const OnboardingWizard: React.FC = () => {
   const {
@@ -164,14 +165,6 @@ const OnboardingWizard: React.FC = () => {
             </div>
           </div>
           
-          {/* Enhanced Progress Indicator */}
-          <ProgressIndicator
-            steps={stepData}
-            currentStep={currentStep}
-            completedSteps={Array.from({ length: currentStep }, (_, i) => i)}
-            className="mb-6"
-          />
-          
           {/* Progress Bar */}
           <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
             <div 
@@ -183,7 +176,7 @@ const OnboardingWizard: React.FC = () => {
           {/* Step Info */}
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-700 font-medium">
-              Schritt {currentStep + 1} von {totalSteps} • {stepData[currentStep]?.title}
+              Schritt {typeof currentStep === 'number' ? currentStep + 1 : 1} von {totalSteps} • {stepData[typeof currentStep === 'number' ? currentStep : 0]?.title}
             </span>
             <span className="text-blue-600 font-semibold">
               {Math.round(progress)}% abgeschlossen
@@ -219,8 +212,8 @@ const OnboardingWizard: React.FC = () => {
                     Bitte korrigieren Sie folgende Fehler:
                   </h3>
                   <ul className="text-sm text-red-700 space-y-1">
-                    {errors.map((error, index) => (
-                      <li key={index}>• {error.message}</li>
+                    {errors.map((error: any, index: number) => (
+                      <li key={index}>• {error.message || error}</li>
                     ))}
                   </ul>
                 </div>
@@ -256,18 +249,21 @@ const OnboardingWizard: React.FC = () => {
             <div className="flex items-center space-x-4">
               {/* Enhanced Step Dots */}
               <div className="flex space-x-3">
-                {Array.from({ length: totalSteps }, (_, index) => (
+                {Array.from({ length: totalSteps }, (_, index) => {
+                  const currentStepNum = typeof currentStep === 'number' ? currentStep : 0;
+                  return (
                   <div
                     key={index}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index === currentStep
+                      index === currentStepNum
                         ? 'bg-blue-600 ring-4 ring-blue-200 scale-125'
-                        : index < currentStep
+                        : index < currentStepNum
                         ? 'bg-green-500 scale-110'
                         : 'bg-gray-300'
                     }`}
                   />
-                ))}
+                );
+                })}
               </div>
 
               <button

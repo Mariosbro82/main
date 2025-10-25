@@ -1,0 +1,30 @@
+{
+  "name": "Vista Pension Calculator",
+  "short_name": "Vista Pension",
+  "description": "Professioneller Rentenrechner für gesetzliche, private und betriebliche Altersvorsorge",
+  "start_url": "/app/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/app/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": [],
+  "lang": "de-DE",
+  "dir": "ltr",
+  "scope": "/app/",
+  "prefer_related_applications": false
+}

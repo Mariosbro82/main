@@ -15,8 +15,25 @@ export class OnboardingStorageService {
     return OnboardingStorageService.instance;
   }
 
+  // Check if localStorage is available
+  private isLocalStorageAvailable(): boolean {
+    try {
+      const test = '__storage_test__';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Save data to localStorage
   saveData(data: Partial<OnboardingData>): void {
+    if (!this.isLocalStorageAvailable()) {
+      console.warn('localStorage is not available, skipping save');
+      return;
+    }
+
     try {
       const storageData = {
         ...data,
@@ -26,17 +43,33 @@ export class OnboardingStorageService {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
     } catch (error) {
       console.error('Failed to save onboarding data:', error);
+      // Try to free up space by clearing old data
+      try {
+        this.clearData();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          ...data,
+          version: VERSION,
+          lastSaved: new Date().toISOString()
+        }));
+      } catch (retryError) {
+        console.error('Retry failed:', retryError);
+      }
     }
   }
 
   // Load data from localStorage
   loadData(): Partial<OnboardingData> | null {
+    if (!this.isLocalStorageAvailable()) {
+      console.warn('localStorage is not available, returning null');
+      return null;
+    }
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) return null;
 
       const data = JSON.parse(stored);
-      
+
       // Version check - if version mismatch, return null to force re-onboarding
       if (data.version !== VERSION) {
         console.warn('Onboarding data version mismatch, clearing data');
@@ -47,6 +80,12 @@ export class OnboardingStorageService {
       return data;
     } catch (error) {
       console.error('Failed to load onboarding data:', error);
+      // Clear corrupted data
+      try {
+        this.clearData();
+      } catch (clearError) {
+        console.error('Failed to clear corrupted data:', clearError);
+      }
       return null;
     }
   }
@@ -89,15 +128,24 @@ export class OnboardingStorageService {
   }
 
   static setCompleted(completed: boolean): void {
-    if (completed) {
-      localStorage.setItem('onboarding-completed', 'true');
-    } else {
-      localStorage.removeItem('onboarding-completed');
+    try {
+      if (completed) {
+        localStorage.setItem('onboarding-completed', 'true');
+      } else {
+        localStorage.removeItem('onboarding-completed');
+      }
+    } catch (error) {
+      console.error('Failed to set completion status:', error);
     }
   }
 
   static isCompleted(): boolean {
-    return localStorage.getItem('onboarding-completed') === 'true';
+    try {
+      return localStorage.getItem('onboarding-completed') === 'true';
+    } catch (error) {
+      console.error('Failed to check completion status:', error);
+      return false;
+    }
   }
 
   // Auto-save with debouncing

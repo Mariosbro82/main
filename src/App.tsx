@@ -8,33 +8,28 @@ import { Footer } from "@/components/Footer";
 import { Suspense, lazy } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import Dashboard from "@/pages/dashboard";
-import Home from "@/pages/home";
-import Questions from "@/pages/questions";
-import TaxCalculatorPage from "@/pages/TaxCalculatorPage";
 import NotFound from "@/pages/not-found";
 import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Get base path from environment (matches vite.config.ts)
 const base = import.meta.env.BASE_URL;
 
-// Lazy load legal pages for better performance
+// Lazy load ALL pages for optimal performance and code splitting
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Home = lazy(() => import("@/pages/home"));
+const Questions = lazy(() => import("@/pages/questions"));
+const TaxCalculatorPage = lazy(() => import("@/pages/TaxCalculatorPage"));
 const Impressum = lazy(() => import("@/pages/impressum"));
 const Datenschutz = lazy(() => import("@/pages/datenschutz"));
 const AGB = lazy(() => import("@/pages/agb"));
 
-// Loading component for legal pages
-const LegalPageLoader = () => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 py-8">
-    <div className="container mx-auto px-4 max-w-4xl">
-      <Card className="w-full">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <span className="ml-3 text-gray-600">Seite wird geladen...</span>
-          </div>
-        </CardContent>
-      </Card>
+// Professional loading component for all pages
+const PageLoader = () => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center">
+    <div className="text-center">
+      <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+      <p className="text-gray-600 font-medium">Lädt...</p>
     </div>
   </div>
 );
@@ -42,34 +37,24 @@ const LegalPageLoader = () => (
 function Router() {
   return (
     <WouterRouter base={base}>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/calculator" component={Dashboard} />
-        <Route path="/fonds">
-          <Home initialTab="funds" />
-        </Route>
-        <Route path="/vergleich">
-          <Home initialTab="comparison" />
-        </Route>
-        <Route path="/questions" component={Questions} />
-        <Route path="/tax-calculator" component={TaxCalculatorPage} />
-        <Route path="/impressum">
-          <Suspense fallback={<LegalPageLoader />}>
-            <Impressum />
-          </Suspense>
-        </Route>
-        <Route path="/datenschutz">
-          <Suspense fallback={<LegalPageLoader />}>
-            <Datenschutz />
-          </Suspense>
-        </Route>
-        <Route path="/agb">
-          <Suspense fallback={<LegalPageLoader />}>
-            <AGB />
-          </Suspense>
-        </Route>
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/calculator" component={Dashboard} />
+          <Route path="/fonds">
+            <Home initialTab="funds" />
+          </Route>
+          <Route path="/vergleich">
+            <Home initialTab="comparison" />
+          </Route>
+          <Route path="/questions" component={Questions} />
+          <Route path="/tax-calculator" component={TaxCalculatorPage} />
+          <Route path="/impressum" component={Impressum} />
+          <Route path="/datenschutz" component={Datenschutz} />
+          <Route path="/agb" component={AGB} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </WouterRouter>
   );
 }
@@ -77,20 +62,22 @@ function Router() {
 function App() {
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <OnboardingContainer>
-          <div className="min-h-screen flex flex-col">
-            <Toaster />
-            <main className="flex-1">
-              <Router />
-            </main>
-            <Footer />
-          </div>
-          <CookieBanner />
-        </OnboardingContainer>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <OnboardingContainer>
+            <div className="min-h-screen flex flex-col">
+              <Toaster />
+              <main className="flex-1">
+                <Router />
+              </main>
+              <Footer />
+            </div>
+            <CookieBanner />
+          </OnboardingContainer>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 

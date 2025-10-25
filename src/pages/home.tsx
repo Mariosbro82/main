@@ -28,7 +28,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { FadeIn, SlideIn, ScaleIn, StaggerContainer, StaggerItem, ScrollReveal, HoverScale, PageTransition } from "@/components/ui/animations";
 import { User, Settings, Check, X, Download, Calculator, Info, TrendingUp, Shield, AlertCircle, Eye, EyeOff, Moon, Sun, HelpCircle, Zap, Save, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
-import { generatePensionPDF } from "@/services/pdf-generator";
+// PDF generator lazy loaded on-demand for better performance
+// import { generatePensionPDF } from "@/services/pdf-generator";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useAutoSave } from "@/hooks/useAutoSave";
 
@@ -514,6 +515,9 @@ function Home({ initialTab = "private-pension" }: HomeProps = {}) {
         title: language === 'de' ? 'PDF wird erstellt...' : 'Creating PDF...',
         description: language === 'de' ? 'Bitte warten Sie, während Ihr Bericht generiert wird' : 'Please wait while your report is being generated'
       });
+
+      // Dynamically import PDF generator (lazy loading for better performance)
+      const { generatePensionPDF } = await import('@/services/pdf-generator');
 
       // Generate PDF using the enhanced service
       await generatePensionPDF({
