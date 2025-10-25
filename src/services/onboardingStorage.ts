@@ -94,15 +94,21 @@ export class OnboardingStorageService {
   clearData(): void {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      // Also remove the legacy boolean flag to keep storage in sync
+      localStorage.removeItem('onboarding-completed');
     } catch (error) {
       console.error('Failed to clear onboarding data:', error);
     }
   }
 
-  // Check if onboarding is completed
+  // Check if onboarding is completed (single source of truth)
+  // This checks the actual data for completedAt field
   isOnboardingCompleted(): boolean {
     const data = this.loadData();
-    return data?.completedAt !== undefined;
+    // Return true only if completedAt exists and is a valid ISO string
+    return data?.completedAt !== undefined &&
+           typeof data.completedAt === 'string' &&
+           data.completedAt.length > 0;
   }
 
   // Mark onboarding as completed
@@ -127,9 +133,13 @@ export class OnboardingStorageService {
     OnboardingStorageService.getInstance().clearData();
   }
 
+  // Legacy method: kept for backward compatibility
+  // Now delegates to the single source of truth (completedAt in data)
   static setCompleted(completed: boolean): void {
+    console.warn('setCompleted() is deprecated. Use markCompleted() or update data with completedAt field.');
     try {
       if (completed) {
+        // For backward compatibility, also set the flag
         localStorage.setItem('onboarding-completed', 'true');
       } else {
         localStorage.removeItem('onboarding-completed');
@@ -139,13 +149,9 @@ export class OnboardingStorageService {
     }
   }
 
+  // Delegates to the instance method for single source of truth
   static isCompleted(): boolean {
-    try {
-      return localStorage.getItem('onboarding-completed') === 'true';
-    } catch (error) {
-      console.error('Failed to check completion status:', error);
-      return false;
-    }
+    return OnboardingStorageService.getInstance().isOnboardingCompleted();
   }
 
   // Auto-save with debouncing

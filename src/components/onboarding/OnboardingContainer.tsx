@@ -24,9 +24,14 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
 
         if (isMounted && !dataLoaded) {
           dataLoaded = true;
-          // Read completion status directly from storage AFTER load completes
-          const completed = OnboardingStorageService.isCompleted();
-          console.log('[OnboardingContainer] Data loaded, completed:', completed);
+          // Derive completion from actual persisted data (single source of truth)
+          const persistedData = OnboardingStorageService.loadData();
+          // If loadData returns null (version mismatch/error), treat as incomplete
+          // If it returns data, check for completedAt presence/validity
+          const completed = persistedData?.completedAt !== undefined &&
+                           typeof persistedData.completedAt === 'string' &&
+                           persistedData.completedAt.length > 0;
+          console.log('[OnboardingContainer] Data loaded, completed:', completed, 'completedAt:', persistedData?.completedAt);
           setShowOnboarding(!completed);
           setIsLoading(false);
         }
@@ -47,9 +52,12 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
     const timeoutId = setTimeout(() => {
       if (isMounted && !dataLoaded) {
         dataLoaded = true;
-        // Check localStorage directly for completion status
-        const completed = OnboardingStorageService.isCompleted();
-        console.log('[OnboardingContainer] Timeout triggered, completed:', completed);
+        // Derive completion from persisted data, not boolean flag
+        const persistedData = OnboardingStorageService.loadData();
+        const completed = persistedData?.completedAt !== undefined &&
+                         typeof persistedData.completedAt === 'string' &&
+                         persistedData.completedAt.length > 0;
+        console.log('[OnboardingContainer] Timeout triggered, completed:', completed, 'completedAt:', persistedData?.completedAt);
         setShowOnboarding(!completed);
         setIsLoading(false);
       }
