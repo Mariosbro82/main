@@ -5,19 +5,77 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Footer } from "@/components/Footer";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-// Normalize Vite's BASE_URL for Wouter so GitHub Pages paths like /app/... resolve correctly.
-const rawBase = import.meta.env.BASE_URL ?? "/";
-const routerBase =
-  rawBase === "/"
-    ? undefined
-    : rawBase.replace(/\/+$/, "") || undefined;
+// Get base path from environment (matches vite.config.ts)
+// For GitHub Pages, this will be "/app/" in production, "/" in development
+const base = import.meta.env.BASE_URL;
+
+/**
+ * Custom location hook for GitHub Pages subdirectory deployment.
+ *
+ * This hook enables clean URLs (without hash routing) for subdirectory deployments
+ * by normalizing paths between the browser and Wouter router:
+ * - Strips the base path (/app/) from browser URLs for route matching
+ * - Adds the base path back when navigating to maintain correct URLs
+ *
+ * Example: Browser sees "/app/calculator" → Router matches "/calculator"
+ */
+const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void] => {
+  const [loc, setLoc] = useState(() => {
+    const path = window.location.pathname;
+    // Remove base path from pathname for route matching
+    // Handle edge cases: "/app/" -> "/", "/app/calculator" -> "/calculator", "/app" -> "/"
+    if (base === "/" || base === "") return path;
+    const normalizedBase = base.replace(/\/$/, ""); // "/app"
+    if (path === normalizedBase || path === normalizedBase + "/") return "/";
+    if (path.startsWith(normalizedBase + "/")) return path.slice(normalizedBase.length);
+    return path;
+  });
+
+  useEffect(() => {
+    const handler = () => {
+      const path = window.location.pathname;
+      // Apply same normalization logic
+      if (base === "/" || base === "") {
+        setLoc(path);
+        return;
+      }
+      const normalizedBase = base.replace(/\/$/, "");
+      if (path === normalizedBase || path === normalizedBase + "/") {
+        setLoc("/");
+      } else if (path.startsWith(normalizedBase + "/")) {
+        setLoc(path.slice(normalizedBase.length));
+      } else {
+        setLoc(path);
+      }
+    };
+
+    // Listen to popstate events (browser back/forward)
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
+
+  const navigate = (to: string, options?: any) => {
+    // Add base path back when navigating
+    const fullPath = base !== "/" && base !== "" ? `${base.replace(/\/$/, "")}${to}` : to;
+
+    if (options?.replace) {
+      window.history.replaceState(null, "", fullPath);
+    } else {
+      window.history.pushState(null, "", fullPath);
+    }
+
+    setLoc(to);
+  };
+
+  return [loc, navigate];
+};
 
 // Lazy load ALL pages for optimal performance and code splitting
 const Dashboard = lazy(() => import("@/pages/dashboard"));
@@ -40,7 +98,7 @@ const PageLoader = () => (
 
 function Router() {
   return (
-    <WouterRouter base={routerBase}>
+    <WouterRouter hook={useGitHubPagesLocation}>
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Dashboard} />
