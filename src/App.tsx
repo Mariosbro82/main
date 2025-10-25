@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Get base path from environment (matches vite.config.ts)
 // For GitHub Pages, this will be "/app/" in production, "/" in development
