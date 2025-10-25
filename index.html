@@ -90,6 +90,44 @@
         var hasShownFallback = false;
         var fallbackEl = null;
         var cleanupFns = [];
+        var reloadKey = "__vista_force_reload__";
+
+        try {
+          window.__APP_BOOTSTRAP_RELOAD_KEY__ = reloadKey;
+        } catch (err) {
+          console.warn("Unable to expose bootstrap reload key", err);
+        }
+
+        function tryForceReload(reason) {
+          if (window.__APP_BOOTSTRAPPED__) {
+            return false;
+          }
+
+          var reasonsRequiringReload = ["asset-load-error", "timeout"];
+          if (reasonsRequiringReload.indexOf(reason) === -1) {
+            return false;
+          }
+
+          try {
+            var reloadCount = Number(sessionStorage.getItem(reloadKey) || "0");
+            if (reloadCount >= 2) {
+              return false;
+            }
+            sessionStorage.setItem(reloadKey, String(reloadCount + 1));
+          } catch (err) {
+            console.warn("Failed to persist reload counter", err);
+          }
+
+          try {
+            var url = new URL(window.location.href);
+            url.searchParams.set("_r", Date.now().toString());
+            window.location.replace(url.toString());
+            return true;
+          } catch (err) {
+            console.warn("Force reload failed", err);
+            return false;
+          }
+        }
 
         function removeFallback() {
           if (!fallbackEl) return;
@@ -103,6 +141,11 @@
           if (window.__APP_BOOTSTRAPPED__ || hasShownFallback) {
             return;
           }
+
+          if (tryForceReload(reason)) {
+            return;
+          }
+
           hasShownFallback = true;
           removeFallback();
 
@@ -180,7 +223,14 @@
 
         window.__APP_BOOTSTRAP_FALLBACK__ = {
           show: showFallback,
-          clear: removeFallback,
+          clear: function () {
+            try {
+              sessionStorage.removeItem(reloadKey);
+            } catch (err) {
+              // ignore
+            }
+            removeFallback();
+          },
         };
       })();
     </script>
