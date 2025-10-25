@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import TaxCalculator from '@/components/TaxCalculator';
+// TaxCalculator component temporarily removed for rebuild
+// import TaxCalculator from '@/components/TaxCalculator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calculator, TrendingUp, Shield, PiggyBank } from 'lucide-react';
+import { Calculator, TrendingUp, Shield, PiggyBank, Construction } from 'lucide-react';
 import {
   CAPITAL_GAINS_TAX_RATE_PERCENT,
   GOVERNMENT_PARAMETERS_2024,
@@ -152,7 +153,21 @@ const TaxCalculatorPage: React.FC = () => {
         </div>
 
         {/* Tax Calculator Component */}
-        <TaxCalculator language={language} />
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Construction className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {language === 'de' ? 'In Entwicklung' : 'Under Development'}
+              </h3>
+              <p className="text-gray-600">
+                {language === 'de'
+                  ? 'Der Steuerrechner wird aktuell überarbeitet und steht in Kürze wieder zur Verfügung.'
+                  : 'The tax calculator is currently being revised and will be available again soon.'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Disclaimer */}
         <Card className="mt-8">
