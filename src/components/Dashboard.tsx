@@ -146,6 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
     const riester = data.riester || {};
     const ruerup = data.ruerup || {};
     const occupational = data.occupationalPension || {};
+    const privatePension = data.privatePension || {};
     const lifeInsurance = data.lifeInsurance || {};
     const funds = data.funds || {};
     const savings = data.savings || {};
@@ -181,6 +182,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
       ? (occupational.amount_A || 0) + (occupational.amount_B || 0)
       : occupational.amount || 0;
 
+    // Calculate estimated monthly payout from private pension contributions
+    const privatePensionContribution = isMarriedBoth
+      ? (privatePension.contribution_A || 0) + (privatePension.contribution_B || 0)
+      : privatePension.contribution || 0;
+
+    // Estimate monthly payout from private pension based on contributions
+    // Assumptions: 5% return, accumulation from current age to 67, then 4% withdrawal rate
+    const currentAge = personal.age || 30;
+    const retirementAge = 67;
+    const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+    const expectedReturn = 0.05; // 5% annual return
+    const withdrawalRate = 0.04; // 4% annual withdrawal rate
+
+    let privatePensionMonthlyPayout = 0;
+    if (privatePensionContribution > 0 && yearsToRetirement > 0) {
+      // Future value of monthly contributions (annuity)
+      const monthlyRate = expectedReturn / 12;
+      const totalMonths = yearsToRetirement * 12;
+      const futureValue = privatePensionContribution *
+        ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate) *
+        (1 + monthlyRate);
+
+      // Convert to monthly payout using withdrawal rate
+      privatePensionMonthlyPayout = (futureValue * withdrawalRate) / 12;
+    }
+
     const lifeInsuranceSum = isMarriedBoth
       ? (lifeInsurance.sum_A || 0) + (lifeInsurance.sum_B || 0)
       : lifeInsurance.sum || 0;
@@ -193,9 +220,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
 
     const totalAssets = lifeInsuranceSum + fundsBalance + savingsBalance;
     const totalRetirementIncome =
-      totalStatutoryPension + riesterAmount + ruerupAmount + occupationalAmount;
+      totalStatutoryPension + riesterAmount + ruerupAmount + occupationalAmount + privatePensionMonthlyPayout;
     const replacementRatio = netMonthly > 0 ? (totalRetirementIncome / netMonthly) * 100 : 0;
-    const pensionGap = Math.max(0, netMonthly * 0.8 - totalRetirementIncome);
+    // Coverage gap calculation per specification: Gap = (Net Income × 0.8) – (Statutory Pension + Private Pension)
+    const pensionGap = Math.max(0, netMonthly * 0.8 - (totalStatutoryPension + privatePensionMonthlyPayout));
 
     return {
       age: personal.age || 0,
@@ -206,6 +234,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ language = 'de' }) => {
       riesterAmount,
       ruerupAmount,
       occupationalAmount,
+      privatePensionMonthlyPayout,
       totalRetirementIncome,
       totalAssets,
       replacementRatio,

@@ -24,6 +24,7 @@ import {
   CAPITAL_GAINS_TAX_RATE_PERCENT,
   GOVERNMENT_PARAMETERS_2024,
 } from '@/data/governmentParameters';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 
 interface TaxCalculatorProps {
   language: 'de' | 'en';
@@ -48,6 +49,9 @@ const DEFAULT_RUERUP_DEDUCTIBLE_RATE = GOVERNMENT_PARAMETERS_2024.tax.ruerupDedu
 const DEFAULT_TAXABLE_PORTION = GOVERNMENT_PARAMETERS_2024.tax.taxablePortionRetirement;
 
 const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
+  // Get onboarding data
+  const { data, isCompleted } = useOnboardingStore();
+
   const [settings, setSettings] = useState({
     annualIncome: 65000,
     monthlyContribution: 500,
@@ -62,6 +66,54 @@ const TaxCalculator: React.FC<TaxCalculatorProps> = ({ language }) => {
   // Real-time updates hooks
   const { updateValue, isUpdating, lastUpdate } = useRealtimeUpdates();
   const { editingField, editValue, startEditing, saveEdit, cancelEdit, changedValues } = useFieldUpdates();
+
+  // Load onboarding data when component mounts
+  useEffect(() => {
+    if (isCompleted && data) {
+      const isMarriedBoth = data.personal?.maritalStatus === 'verheiratet' && data.personal?.calcScope === 'beide_personen';
+
+      // Calculate annual income from onboarding data
+      let annualIncome = 65000; // Default fallback
+      if (isMarriedBoth) {
+        const netMonthlyA = data.income?.netMonthly_A || 0;
+        const netMonthlyB = data.income?.netMonthly_B || 0;
+        const totalNetMonthly = netMonthlyA + netMonthlyB;
+        if (totalNetMonthly > 0) {
+          annualIncome = totalNetMonthly * 12;
+        }
+      } else if (data.income?.netMonthly) {
+        annualIncome = data.income.netMonthly * 12;
+      }
+
+      // Calculate monthly contribution from Rürup data
+      let monthlyContribution = 500; // Default fallback
+      if (isMarriedBoth) {
+        const ruerupA = data.ruerup?.amount_A || 0;
+        const ruerupB = data.ruerup?.amount_B || 0;
+        const totalRuerup = ruerupA + ruerupB;
+        if (totalRuerup > 0) {
+          monthlyContribution = totalRuerup;
+        }
+      } else if (data.ruerup?.amount) {
+        monthlyContribution = data.ruerup.amount;
+      }
+
+      // Calculate investment period from age
+      let investmentPeriod = 30; // Default fallback
+      if (data.personal?.age) {
+        const retirementAge = 67; // Standard retirement age in Germany
+        investmentPeriod = Math.max(10, Math.min(40, retirementAge - data.personal.age));
+      }
+
+      // Update settings with onboarding data
+      setSettings(prev => ({
+        ...prev,
+        annualIncome,
+        monthlyContribution,
+        investmentPeriod,
+      }));
+    }
+  }, [data, isCompleted]);
   
   // Toast notifications
   const { toast } = useToast();

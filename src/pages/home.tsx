@@ -29,6 +29,8 @@ import { FadeIn, SlideIn, ScaleIn, StaggerContainer, StaggerItem, ScrollReveal, 
 import { User, Settings, Check, X, Download, Calculator, Info, TrendingUp, Shield, AlertCircle, Eye, EyeOff, Moon, Sun, HelpCircle, Zap, Save, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { generatePensionPDF } from "@/services/pdf-generator";
+import { useOnboardingStore } from "@/stores/onboardingStore";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
 const formSchema = z.object({
   currentAge: z.number().min(18).max(80),
@@ -44,8 +46,12 @@ const formSchema = z.object({
   safeWithdrawalRate: z.number().min(0).max(1).optional(),
 });
 
-function Home() {
-  const [activeTab, setActiveTab] = useState<TabType>("private-pension");
+interface HomeProps {
+  initialTab?: TabType;
+}
+
+function Home({ initialTab = "private-pension" }: HomeProps = {}) {
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [simulationResults, setSimulationResults] = useState<SimulationResults | null>(null);
   const [chartType, setChartType] = useState<"line" | "area" | "composed" | "bar">("area");
   const [language, setLanguage] = useState<'de' | 'en'>('de');
@@ -124,6 +130,13 @@ function Home() {
     showCustomReturn: false
   });
 
+  // Comparison tool state
+  const [comparisonParams, setComparisonParams] = useState({
+    currentAge: 35,
+    retirementAge: 67,
+    monthlyContribution: 500,
+    annualIncome: 60000
+  });
 
   // State für editierbare Endwerte
   const [editableValues, setEditableValues] = useState({
@@ -263,6 +276,62 @@ function Home() {
     },
   });
 
+  // Onboarding integration - load data from onboarding store
+  const { data: onboardingData, isCompleted } = useOnboardingStore();
+  const { autoSave } = useAutoSave({
+    debounceMs: 500,
+    showToast: false, // Don't show toast for every auto-save in calculator
+  });
+
+  // Pre-fill form with onboarding data on mount
+  useEffect(() => {
+    const personal = onboardingData.personal || {};
+    const privatePension = onboardingData.privatePension || {};
+    const hasOnboardingData = isCompleted || (personal.age && privatePension.contribution);
+
+    if (hasOnboardingData) {
+      const currentAge = personal.age || 30;
+      const monthlyContribution = privatePension.contribution || 500;
+
+      // Update form values with onboarding data
+      form.reset({
+        currentAge,
+        startAge: currentAge,
+        termYears: Math.max(5, 67 - currentAge),
+        monthlyContribution,
+        startInvestment: 10000,
+        targetMaturityValue: null,
+        payoutStartAge: 67,
+        payoutEndAge: 85,
+        payoutMode: "annuity",
+        annuityRate: 0.025,
+        safeWithdrawalRate: 0.035,
+      });
+
+      // Update cost settings if we have more data
+      // (Could add more sophisticated loading from onboarding in future)
+    }
+  }, [onboardingData, isCompleted, form]);
+
+  // Auto-save changes back to onboarding store when form values change
+  useEffect(() => {
+    const subscription = form.watch((formData) => {
+      if (formData.currentAge || formData.monthlyContribution) {
+        autoSave({
+          personal: {
+            age: formData.currentAge || 30,
+            birthYear: new Date().getFullYear() - (formData.currentAge || 30),
+          },
+          privatePension: {
+            contribution: formData.monthlyContribution || 0,
+          },
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, autoSave]);
+
   const simulationMutation = useMutation({
     mutationFn: async (data: FormData) => {
       try {
@@ -331,7 +400,7 @@ function Home() {
         description: "Automatisch gespeichertes Szenario"
       });
       const scenario = await scenarioResponse.json();
-      
+
       // Then create pension plan
       const formData = form.getValues();
       await apiRequest("POST", "/api/pension-plans", {
@@ -345,10 +414,11 @@ function Home() {
         volatility: costSettings.volatility,
         rebalancingEnabled: true,
       });
-      
+
       return scenario;
     },
     onSuccess: () => {
+      setIsLoading(false);
       toast({
         title: "Erfolgreich gespeichert",
         description: "Das Szenario wurde erfolgreich gespeichert",
@@ -356,6 +426,7 @@ function Home() {
       queryClient.invalidateQueries({ queryKey: ["/api/scenarios"] });
     },
     onError: () => {
+      setIsLoading(false);
       toast({
         title: "Fehler",
         description: "Szenario konnte nicht gespeichert werden",
@@ -752,11 +823,15 @@ function Home() {
                                 <Input
                                   type="number"
                                   placeholder="30"
-                                  {...field}
+                                  value={field.value || ''}
+                                  name={field.name}
+                                  ref={field.ref}
+                                  onBlur={field.onBlur}
                                   onChange={(e) => {
                                     const value = e.target.value === '' ? 25 : Number(e.target.value);
                                     if (!isNaN(value) && value >= 18 && value <= 80) {
                                       field.onChange(value);
+                                      form.trigger('currentAge');
                                     }
                                   }}
                                   className="text-2xl font-bold h-20 pl-14 pr-6 bg-gradient-to-r from-background to-accent/20 border-2 border-border/30 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/20 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -774,7 +849,10 @@ function Home() {
                                 <button
                                   key={age}
                                   type="button"
-                                  onClick={() => field.onChange(age)}
+                                  onClick={() => {
+                                    field.onChange(age);
+                                    form.trigger('currentAge');
+                                  }}
                                   className={`p-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                                     field.value === age
                                       ? 'bg-primary text-primary-foreground shadow-md'
@@ -1930,7 +2008,7 @@ function Home() {
                           <span className="text-base font-medium text-foreground">{t("breakdown.totalCosts")}</span>
                         </div>
                         <span className="text-lg font-bold text-warning" data-testid="breakdown-costs">
-                          -{formatCurrency(simulationResults.kpis.totalCosts)}
+                          {formatCurrency(simulationResults.kpis.totalCosts)}
                         </span>
                       </div>
                       <div className="border-t border-border/50 pt-4 mt-6">
@@ -2364,6 +2442,10 @@ function Home() {
                             className="apple-button-primary h-14 text-base font-medium relative group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
                             onClick={() => {
                               setIsLoading(true);
+                              toast({
+                                title: language === 'de' ? 'Szenario wird gespeichert...' : 'Saving scenario...',
+                                description: language === 'de' ? 'Bitte warten Sie, während Ihr Szenario gespeichert wird' : 'Please wait while your scenario is being saved'
+                              });
                               saveScenarioMutation.mutate();
                             }}
                             disabled={saveScenarioMutation.isPending || isLoading}
@@ -2592,6 +2674,17 @@ function Home() {
                         <input
                           type="number"
                           placeholder="500"
+                          value={fundsSettings.monthlyContribution}
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            if (!isNaN(value) && value >= 0) {
+                              setFundsSettings(prev => ({ ...prev, monthlyContribution: value }));
+                              // Auto-save to onboarding
+                              autoSave({
+                                privatePension: { contribution: value }
+                              });
+                            }
+                          }}
                           className="apple-input text-lg h-14 pr-12 w-full"
                           data-testid="input-funds-monthly"
                         />
@@ -2604,12 +2697,20 @@ function Home() {
                       <div className="bg-accent/50 rounded-xl p-6">
                         <div className="flex justify-between items-center mb-4">
                           <span className="text-sm text-muted-foreground">5 Jahre</span>
-                          <span className="text-lg font-semibold text-foreground">25 Jahre</span>
+                          <span className="text-lg font-semibold text-foreground">{fundsSettings.termYears} Jahre</span>
                           <span className="text-sm text-muted-foreground">40 Jahre</span>
                         </div>
-                        <div className="w-full bg-accent rounded-full h-2">
-                          <div className="bg-primary h-2 rounded-full w-1/2"></div>
-                        </div>
+                        <input
+                          type="range"
+                          min="5"
+                          max="40"
+                          value={fundsSettings.termYears}
+                          onChange={(e) => setFundsSettings(prev => ({ ...prev, termYears: Number(e.target.value) }))}
+                          className="w-full h-2 bg-accent rounded-full appearance-none cursor-pointer slider"
+                          style={{
+                            background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${((fundsSettings.termYears - 5) / 35) * 100}%, hsl(var(--accent)) ${((fundsSettings.termYears - 5) / 35) * 100}%, hsl(var(--accent)) 100%)`
+                          }}
+                        />
                       </div>
                     </div>
 
@@ -3041,7 +3142,8 @@ function Home() {
                       <input
                         type="number"
                         placeholder="35"
-                        defaultValue="35"
+                        value={comparisonParams.currentAge}
+                        onChange={(e) => setComparisonParams(prev => ({ ...prev, currentAge: Number(e.target.value) || 0 }))}
                         className="apple-input text-base h-12 w-full"
                         data-testid="comparison-current-age"
                       />
@@ -3051,7 +3153,8 @@ function Home() {
                       <input
                         type="number"
                         placeholder="67"
-                        defaultValue="67"
+                        value={comparisonParams.retirementAge}
+                        onChange={(e) => setComparisonParams(prev => ({ ...prev, retirementAge: Number(e.target.value) || 0 }))}
                         className="apple-input text-base h-12 w-full"
                         data-testid="comparison-retirement-age"
                       />
@@ -3062,7 +3165,8 @@ function Home() {
                         <input
                           type="number"
                           placeholder="500"
-                          defaultValue="500"
+                          value={comparisonParams.monthlyContribution}
+                          onChange={(e) => setComparisonParams(prev => ({ ...prev, monthlyContribution: Number(e.target.value) || 0 }))}
                           className="apple-input text-base h-12 pr-8 w-full"
                           data-testid="comparison-monthly-contribution"
                         />
@@ -3075,7 +3179,8 @@ function Home() {
                         <input
                           type="number"
                           placeholder="60000"
-                          defaultValue="60000"
+                          value={comparisonParams.annualIncome}
+                          onChange={(e) => setComparisonParams(prev => ({ ...prev, annualIncome: Number(e.target.value) || 0 }))}
                           className="apple-input text-base h-12 pr-8 w-full"
                           data-testid="comparison-annual-income"
                         />

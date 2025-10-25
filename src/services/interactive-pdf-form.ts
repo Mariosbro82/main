@@ -499,7 +499,7 @@ export class InteractivePensionForm {
 
           // Total costs
           var totalCosts = totalFees + totalTaxes;
-          var netReturn = capitalGains - totalCosts;
+          var netReturn = projectedValue - totalCosts;
 
           // Performance metrics
           var effectiveReturn = 0;
