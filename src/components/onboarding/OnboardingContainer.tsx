@@ -14,30 +14,37 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    // EMERGENCY FIX: Always skip onboarding and show the app
-    // This prevents any white page issues from onboarding system
     const loadData = async () => {
       try {
         await loadFromStorage();
-        // ALWAYS skip onboarding - just show the app
-        setShowOnboarding(false);
+        // Show onboarding wizard if not completed
+        setShowOnboarding(!isCompleted);
       } catch (error) {
         console.error('Failed to load onboarding data:', error);
-        // On error, skip onboarding to show the app
-        setShowOnboarding(false);
+        setError('Fehler beim Laden der Daten');
+        // On error, show onboarding to allow user to start fresh
+        setShowOnboarding(true);
       } finally {
         setIsLoading(false);
       }
     };
 
     // Set a 1-second max timeout to always show something
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setIsLoading(false);
-      setShowOnboarding(false);
     }, 1000);
 
     loadData();
-  }, [loadFromStorage]);
+
+    return () => clearTimeout(timeoutId);
+  }, [loadFromStorage, isCompleted]);
+
+  // React to onboarding completion changes (when wizard completes)
+  useEffect(() => {
+    if (isCompleted) {
+      setShowOnboarding(false);
+    }
+  }, [isCompleted]);
 
   // Skip onboarding function for debugging
   const handleSkipOnboarding = () => {
