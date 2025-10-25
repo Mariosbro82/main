@@ -5,9 +5,29 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
+function resolveBase(mode: string): string {
+  // Allow explicit override via environment variable
+  const explicitBase = process.env.VITE_BASE_PATH;
+  if (explicitBase) {
+    return explicitBase.endsWith("/") ? explicitBase : `${explicitBase}/`;
+  }
+
+  // Derive GitHub Pages base path automatically when building for production
+  if (mode === "production") {
+    const repoName =
+      process.env.GITHUB_REPOSITORY?.split("/")[1] ??
+      path.basename(__dirname);
+    if (repoName) {
+      return `/${repoName.replace(/^\/+|\/+$/g, "")}/`;
+    }
+  }
+
+  return "/";
+}
+
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: process.env.NODE_ENV === 'production' ? '/app/' : '/',
+  base: resolveBase(mode),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -19,17 +39,17 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Vendor chunks - split by category for better caching
-          'vendor-react': ['react', 'react-dom', 'react/jsx-runtime'],
-          'vendor-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-select',
-            '@radix-ui/react-slider',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-tooltip',
+          "vendor-react": ["react", "react-dom", "react/jsx-runtime"],
+          "vendor-ui": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-select",
+            "@radix-ui/react-slider",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-tooltip",
           ],
-          'vendor-charts': ['recharts'],
-          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'vendor-utils': ['date-fns', 'zustand', 'wouter', '@tanstack/react-query'],
+          "vendor-charts": ["recharts"],
+          "vendor-forms": ["react-hook-form", "@hookform/resolvers", "zod"],
+          "vendor-utils": ["date-fns", "zustand", "wouter", "@tanstack/react-query"],
         },
       },
     },
@@ -41,11 +61,11 @@ export default defineConfig({
       deny: ["**/.*"],
     },
     proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
+      "/api": {
+        target: "http://localhost:5000",
         changeOrigin: true,
         secure: false,
       },
     },
   },
-});
+}));

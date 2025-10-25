@@ -37,6 +37,7 @@ jobs:
       run: npm run build:client
       env:
         NODE_ENV: production
+        VITE_BASE_PATH: "/${{ github.event.repository.name }}/"
 
     # Only deploy on push to main, skip on pull requests
     - name: Setup Pages
