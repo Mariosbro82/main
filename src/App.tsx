@@ -14,6 +14,7 @@ import Questions from "@/pages/questions";
 import TaxCalculatorPage from "@/pages/TaxCalculatorPage";
 import NotFound from "@/pages/not-found";
 import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Get base path from environment (matches vite.config.ts)
 const base = import.meta.env.BASE_URL;
@@ -77,20 +78,22 @@ function Router() {
 function App() {
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <OnboardingContainer>
-          <div className="min-h-screen flex flex-col">
-            <Toaster />
-            <main className="flex-1">
-              <Router />
-            </main>
-            <Footer />
-          </div>
-          <CookieBanner />
-        </OnboardingContainer>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <OnboardingContainer>
+            <div className="min-h-screen flex flex-col">
+              <Toaster />
+              <main className="flex-1">
+                <Router />
+              </main>
+              <Footer />
+            </div>
+            <CookieBanner />
+          </OnboardingContainer>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 
