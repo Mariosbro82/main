@@ -14,7 +14,7 @@ import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Get base path from environment (matches vite.config.ts)
-// For GitHub Pages, this will be "/app/" in production, "/" in development
+// For GitHub Pages, this will be "/german-pension-calculator/" in production, "/" in development
 const base = import.meta.env.BASE_URL;
 
 /**

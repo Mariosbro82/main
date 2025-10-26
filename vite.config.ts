@@ -6,15 +6,16 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function resolveBase(mode: string): string {
-  // Allow explicit override via environment variable
+  // Allow explicit override via environment variable (GitHub Actions will set this)
   const explicitBase = process.env.VITE_BASE_PATH;
   if (explicitBase) {
     return explicitBase.endsWith("/") ? explicitBase : `${explicitBase}/`;
   }
 
-  // For GitHub Pages, always use /app/ as base path
+  // For local production builds, use root path
+  // GitHub Actions will set VITE_BASE_PATH automatically
   if (mode === "production") {
-    return "/app/";
+    return "/";
   }
 
   return "/";
