@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Suspense, lazy, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -108,14 +109,28 @@ function Router() {
           </Route>
           <Route path="/calculator">
             <ErrorBoundary>
-              <Dashboard />
+              <Home initialTab="private-pension" />
             </ErrorBoundary>
           </Route>
           <Route path="/fonds">
-            <Home initialTab="funds" />
+            <ErrorBoundary>
+              <Home initialTab="funds" />
+            </ErrorBoundary>
+          </Route>
+          <Route path="/fund-performance">
+            <ErrorBoundary>
+              <Home initialTab="fund-performance" />
+            </ErrorBoundary>
           </Route>
           <Route path="/vergleich">
-            <Home initialTab="comparison" />
+            <ErrorBoundary>
+              <Home initialTab="comparison" />
+            </ErrorBoundary>
+          </Route>
+          <Route path="/custom-comparison">
+            <ErrorBoundary>
+              <Home initialTab="custom-comparison" />
+            </ErrorBoundary>
           </Route>
           <Route path="/questions" component={Questions} />
           <Route path="/tax-calculator" component={TaxCalculatorPage} />
@@ -130,6 +145,7 @@ function Router() {
 }
 
 function App() {
+  const [language, setLanguage] = useState<'de' | 'en'>('de');
 
   return (
     <ErrorBoundary>
@@ -138,6 +154,7 @@ function App() {
           <OnboardingContainer>
             <div className="min-h-screen flex flex-col">
               <Toaster />
+              <Header language={language} onLanguageChange={setLanguage} />
               <main className="flex-1">
                 <Router />
               </main>

@@ -29,7 +29,6 @@ export async function apiRequest(
       }
 
       // If server is not available (GitHub Pages), use client-side calculation
-      console.log('Server not available, using client-side calculation');
       const result = calculatePrivatePensionClient(data as any);
 
       // Create a mock Response object
@@ -39,7 +38,6 @@ export async function apiRequest(
       });
     } catch (error) {
       // If fetch fails (no server), use client-side calculation
-      console.log('Using client-side calculation (no server)');
       const result = calculatePrivatePensionClient(data as any);
 
       return new Response(JSON.stringify(result), {

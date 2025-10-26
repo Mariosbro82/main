@@ -27,7 +27,6 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
           // Use centralized validation (single source of truth)
           const persistedData = OnboardingStorageService.loadData();
           const completed = OnboardingStorageService.isCompleted(persistedData);
-          console.log('[OnboardingContainer] Data loaded, completed:', completed);
           setShowOnboarding(!completed);
           setIsLoading(false);
         }
@@ -52,7 +51,6 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children }) =
         // Use centralized validation (single source of truth)
         const persistedData = OnboardingStorageService.loadData();
         const completed = OnboardingStorageService.isCompleted(persistedData);
-        console.log('[OnboardingContainer] Timeout triggered, completed:', completed);
         setShowOnboarding(!completed);
         setIsLoading(false);
       } catch (error) {

@@ -26,7 +26,7 @@ import type { SimulationResults } from "@/lib/types";
 import ErrorBoundary, { useErrorHandler } from "@/components/ui/ErrorBoundary";
 import { FadeIn, SlideIn, ScaleIn, StaggerContainer, StaggerItem, ScrollReveal, HoverScale, PageTransition } from "@/components/ui/animations";
 import { User, Settings, Check, X, Download, Calculator, Info, TrendingUp, Shield, AlertCircle, Eye, EyeOff, Moon, Sun, HelpCircle, Zap, Save, BarChart3 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 // PDF generator lazy loaded on-demand for better performance
 // import { generatePensionPDF } from "@/services/pdf-generator";
 import { useOnboardingStore } from "@/stores/onboardingStore";
@@ -51,7 +51,53 @@ interface HomeProps {
 }
 
 function Home({ initialTab = "private-pension" }: HomeProps = {}) {
-  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [location, setLocation] = useLocation();
+  const searchParams = useSearch();
+
+  // Parse tab from URL query parameter or use initialTab
+  const getTabFromUrl = (): TabType => {
+    const params = new URLSearchParams(searchParams);
+    const tabParam = params.get('tab');
+    const validTabs: TabType[] = ['private-pension', 'funds', 'fund-performance', 'comparison', 'custom-comparison'];
+
+    if (tabParam && validTabs.includes(tabParam as TabType)) {
+      return tabParam as TabType;
+    }
+
+    return initialTab;
+  };
+
+  const [activeTab, setActiveTabInternal] = useState<TabType>(getTabFromUrl());
+
+  // Update tab and URL together
+  const setActiveTab = useCallback((tab: TabType) => {
+    setActiveTabInternal(tab);
+
+    // Update URL with new tab parameter
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', tab);
+
+    // Use current pathname with new search params
+    const currentPath = location.split('?')[0];
+    const newUrl = `${currentPath}?${params.toString()}`;
+
+    // Update URL without full page reload
+    window.history.pushState(null, '', newUrl);
+  }, [location, searchParams]);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const newTab = getTabFromUrl();
+      setActiveTabInternal(newTab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [searchParams]);
   const [simulationResults, setSimulationResults] = useState<SimulationResults | null>(null);
   const [chartType, setChartType] = useState<"line" | "area" | "composed" | "bar">("area");
   const [language, setLanguage] = useState<'de' | 'en'>('de');
