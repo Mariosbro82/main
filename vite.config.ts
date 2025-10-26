@@ -12,10 +12,10 @@ function resolveBase(mode: string): string {
     return explicitBase.endsWith("/") ? explicitBase : `${explicitBase}/`;
   }
 
-  // For local production builds, use root path
-  // GitHub Actions will set VITE_BASE_PATH automatically
+  // For GitHub Pages, use repository name as base
+  // This will be overridden by VITE_BASE_PATH in GitHub Actions
   if (mode === "production") {
-    return "/";
+    return "/german-pension-calculator/";
   }
 
   return "/";
