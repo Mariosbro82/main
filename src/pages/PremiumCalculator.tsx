@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 import {
   Calculator,
   TrendingUp,
@@ -11,6 +12,7 @@ import {
   Download,
   Share2,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import {
   Card,
@@ -62,6 +64,7 @@ interface CalculatorInputs {
 }
 
 export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language = 'de' }) => {
+  const { data: onboardingData, isCompleted } = useOnboardingStore();
   const [activeTab, setActiveTab] = useState('private-pension');
   const [isCalculating, setIsCalculating] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -74,6 +77,24 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
     expectedReturn: 6,
     inflationRate: 2,
   });
+
+  // Load data from onboarding if available
+  useEffect(() => {
+    if (isCompleted && onboardingData) {
+      const currentYear = new Date().getFullYear();
+      const birthYear = onboardingData.personal?.birthYear;
+      const currentAge = birthYear ? currentYear - birthYear : 35;
+
+      setInputs(prev => ({
+        ...prev,
+        currentAge,
+        monthlyContribution: onboardingData.privatePension?.monthlyContribution || prev.monthlyContribution,
+        startCapital: onboardingData.privatePension?.startInvestment || prev.startCapital,
+        expectedReturn: onboardingData.privatePension?.expectedReturn || prev.expectedReturn,
+      }));
+      setShowResults(true); // Auto-show results if data is available
+    }
+  }, [onboardingData, isCompleted]);
 
   const texts = {
     de: {
@@ -285,6 +306,21 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               {t.subtitle}
             </p>
+
+            {isCompleted && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 text-success font-medium text-sm"
+              >
+                <Check className="h-4 w-4" />
+                <span>
+                  {language === 'de'
+                    ? 'Daten aus Ihrem Profil geladen'
+                    : 'Data loaded from your profile'}
+                </span>
+              </motion.div>
+            )}
           </motion.div>
         </div>
 

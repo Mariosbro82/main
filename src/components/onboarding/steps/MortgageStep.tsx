@@ -57,42 +57,42 @@ const MortgageStep: React.FC = () => {
       </div>
 
       {mortgage.has && (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Aktuelle Restschuld */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <Calculator className="h-6 w-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Aktuelle Restschuld</h3>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Restschuld heute
-                  <span className="text-gray-500 text-xs ml-1">(Summe heute)</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={mortgage.remainingDebtNow || 0}
-                  onChange={(e) => handleMortgageChange('remainingDebtNow', parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="z.B. 250000"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Aktuelle Restschuld laut Ihrem Kreditvertrag
-                </p>
-              </div>
+        <div className="space-y-6">
+          {/* Aktuelle Restschuld */}
+          <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center space-x-3 mb-4">
+              <Calculator className="h-6 w-6 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Aktuelle Restschuld</h3>
             </div>
 
-            {/* Zinsbindungsende */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Restschuld heute
+                <span className="text-gray-500 text-xs ml-1">(Summe heute)</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={mortgage.remainingDebtNow === 0 ? '' : mortgage.remainingDebtNow}
+                onChange={(e) => handleMortgageChange('remainingDebtNow', parseFloat(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                placeholder="Bitte eingeben (z.B. 250000)"
+              />
+              <p className="text-xs text-gray-600 mt-2">
+                Aktuelle Restschuld laut Ihrem Kreditvertrag
+              </p>
+            </div>
+          </div>
+
+          {/* Zinsbindung Details */}
+          <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center space-x-3 mb-4">
+              <Calendar className="h-6 w-6 text-green-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Zinsbindung</h3>
+            </div>
+
             <div className="space-y-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <Calendar className="h-6 w-6 text-green-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Zinsbindung</h3>
-              </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Ende der Zinsbindung
@@ -100,71 +100,65 @@ const MortgageStep: React.FC = () => {
                 <select
                   value={mortgage.fixationEndYear}
                   onChange={(e) => handleMortgageChange('fixationEndYear', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                 >
                   {years.map(year => (
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-600 mt-2">
                   Jahr, in dem Ihre aktuelle Zinsbindung endet
                 </p>
               </div>
-            </div>
 
-            {/* Restschuld bei Zinsbindungsende */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <Calculator className="h-6 w-6 text-purple-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Restschuld bei Zinsbindungsende</h3>
-              </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Voraussichtliche Restschuld
+                  Voraussichtliche Restschuld bei Zinsbindungsende
                   <span className="text-gray-500 text-xs ml-1">(Summe dann)</span>
                 </label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={mortgage.remainingDebtAtFixationEnd || 0}
+                  value={mortgage.remainingDebtAtFixationEnd === 0 ? '' : mortgage.remainingDebtAtFixationEnd}
                   onChange={(e) => handleMortgageChange('remainingDebtAtFixationEnd', parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="z.B. 180000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  placeholder="Bitte eingeben (z.B. 180000)"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Restschuld zum Ende der aktuellen Zinsbindung
+                <p className="text-xs text-gray-600 mt-2">
+                  Erwartete Restschuld zum Ende der aktuellen Zinsbindung
                 </p>
               </div>
             </div>
+          </div>
 
-            {/* Zinssatz */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <Percent className="h-6 w-6 text-orange-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Zinssatz</h3>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Aktueller Zinssatz
-                  <span className="text-gray-500 text-xs ml-1">(%)</span>
-                </label>
+          {/* Zinssatz - Clearly separated */}
+          <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center space-x-3 mb-4">
+              <Percent className="h-6 w-6 text-orange-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Aktueller Zinssatz</h3>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Zinssatz (in %)
+              </label>
+              <div className="relative">
                 <input
                   type="number"
                   min="0"
                   max="20"
                   step="0.01"
-                  value={mortgage.interestRate || 0}
+                  value={mortgage.interestRate === 0 ? '' : mortgage.interestRate}
                   onChange={(e) => handleMortgageChange('interestRate', parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="z.B. 3.5"
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                  placeholder="Bitte eingeben (z.B. 3.5)"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Ihr aktueller Sollzinssatz (z.B. 3,5 für 3,5%)
-                </p>
+                <span className="absolute right-3 top-2.5 text-gray-500">%</span>
               </div>
+              <p className="text-xs text-gray-600 mt-2">
+                Ihr aktueller Sollzinssatz (z.B. 3,5 für 3,5% p.a.)
+              </p>
             </div>
           </div>
 

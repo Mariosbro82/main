@@ -84,10 +84,10 @@ const IncomeDataStep: React.FC = () => {
             type="number"
             min="0"
             step="0.01"
-            value={currentIncome || 0}
+            value={currentIncome === 0 ? '' : currentIncome}
             onChange={(e) => handleIncomeChange('netMonthly', parseFloat(e.target.value) || 0, person)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="z.B. 3500"
+            placeholder="Bitte eingeben (z.B. 3500)"
             required
           />
           {currentIncome > 0 && (
@@ -108,10 +108,10 @@ const IncomeDataStep: React.FC = () => {
             type="number"
             min="0"
             step="0.01"
-            value={currentGross || 0}
+            value={currentGross === 0 ? '' : currentGross}
             onChange={(e) => handleIncomeChange('grossAnnual', parseFloat(e.target.value) || 0, person)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="z.B. 60000"
+            placeholder="Optional (z.B. 60000)"
           />
           {currentGross > 0 && (
             <p className="text-xs text-gray-500 mt-1">
@@ -167,10 +167,10 @@ const IncomeDataStep: React.FC = () => {
                   type="number"
                   min="0"
                   step="0.01"
-                  value={currentOtherAmount || 0}
+                  value={currentOtherAmount === 0 ? '' : currentOtherAmount}
                   onChange={(e) => handleOtherIncomeChange('amountMonthly', parseFloat(e.target.value) || 0, person)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="z.B. 800"
+                  placeholder="Bitte eingeben (z.B. 800)"
                   required
                 />
                 {currentOtherAmount > 0 && (

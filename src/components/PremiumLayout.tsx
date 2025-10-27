@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PremiumHeader from './PremiumHeader';
-import { ArrowUp } from 'lucide-react';
+import PremiumOnboardingWizard from './onboarding/PremiumOnboardingWizard';
+import { useOnboardingStore } from '@/stores/onboardingStore';
+import { ArrowUp, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
 
 interface PremiumLayoutProps {
   children: React.ReactNode;
@@ -17,6 +20,8 @@ export const PremiumLayout: React.FC<PremiumLayoutProps> = ({
 }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const { isCompleted, loadFromStorage } = useOnboardingStore();
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
@@ -27,6 +32,17 @@ export const PremiumLayout: React.FC<PremiumLayoutProps> = ({
     setTheme(initialTheme);
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
+
+  // Load onboarding data and show wizard if not completed
+  useEffect(() => {
+    const initializeOnboarding = async () => {
+      await loadFromStorage();
+      if (!isCompleted) {
+        setShowOnboarding(true);
+      }
+    };
+    initializeOnboarding();
+  }, [loadFromStorage, isCompleted]);
 
   // Handle theme changes
   const handleThemeChange = (newTheme: 'light' | 'dark') => {
@@ -190,6 +206,41 @@ export const PremiumLayout: React.FC<PremiumLayoutProps> = ({
           </div>
         </div>
       </motion.footer>
+
+      {/* Onboarding Wizard */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <PremiumOnboardingWizard
+            onClose={() => setShowOnboarding(false)}
+            language={language}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Settings Button (Reopen Onboarding) */}
+      {isCompleted && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          onClick={() => setShowOnboarding(true)}
+          className={cn(
+            'fixed bottom-8 left-8 z-40',
+            'p-4 rounded-2xl',
+            'bg-secondary border border-border',
+            'text-foreground',
+            'shadow-soft-lg',
+            'hover:shadow-soft-xl hover:scale-110',
+            'transition-all duration-300',
+            'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+          )}
+          whileHover={{ y: -4, rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
+          aria-label="Update settings"
+          title={language === 'de' ? 'Daten aktualisieren' : 'Update data'}
+        >
+          <Settings className="h-5 w-5" />
+        </motion.button>
+      )}
 
       {/* Scroll to Top Button */}
       <AnimatePresence>
