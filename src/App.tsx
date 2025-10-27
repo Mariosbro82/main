@@ -4,14 +4,14 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CookieBanner } from "@/components/CookieBanner";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import PremiumLayout from "@/components/PremiumLayout";
 import { Suspense, lazy, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import OnboardingContainer from "@/components/onboarding/OnboardingContainer";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import { motion } from "framer-motion";
 
 // Get base path from environment (matches vite.config.ts)
 // For GitHub Pages, this will be "/german-pension-calculator/" in production, "/" in development
@@ -79,6 +79,10 @@ const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void]
 };
 
 // Lazy load ALL pages for optimal performance and code splitting
+const PremiumDashboard = lazy(() => import("@/pages/PremiumDashboard"));
+const PremiumCalculator = lazy(() => import("@/pages/PremiumCalculator"));
+const PremiumFunds = lazy(() => import("@/pages/PremiumFunds"));
+const PremiumComparison = lazy(() => import("@/pages/PremiumComparison"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Home = lazy(() => import("@/pages/home"));
 const Questions = lazy(() => import("@/pages/questions"));
@@ -87,49 +91,59 @@ const Impressum = lazy(() => import("@/pages/impressum"));
 const Datenschutz = lazy(() => import("@/pages/datenschutz"));
 const AGB = lazy(() => import("@/pages/agb"));
 
-// Professional loading component for all pages
+// Premium loading component
 const PageLoader = () => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center">
-    <div className="text-center">
-      <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-      <p className="text-gray-600 font-medium">Lädt...</p>
-    </div>
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="text-center"
+    >
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="inline-block mb-4"
+      >
+        <Loader2 className="h-12 w-12 text-primary" />
+      </motion.div>
+      <p className="text-muted-foreground font-medium">Lädt...</p>
+    </motion.div>
   </div>
 );
 
-function Router() {
+function Router({ language }: { language: 'de' | 'en' }) {
   return (
     <WouterRouter hook={useGitHubPagesLocation}>
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/">
             <ErrorBoundary>
-              <Dashboard />
+              <PremiumDashboard language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/calculator">
             <ErrorBoundary>
-              <Home initialTab="private-pension" />
+              <PremiumCalculator language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/fonds">
             <ErrorBoundary>
-              <Home initialTab="funds" />
+              <PremiumFunds language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/fund-performance">
             <ErrorBoundary>
-              <Home initialTab="fund-performance" />
+              <PremiumFunds language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/vergleich">
             <ErrorBoundary>
-              <Home initialTab="comparison" />
+              <PremiumComparison language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/custom-comparison">
             <ErrorBoundary>
-              <Home initialTab="custom-comparison" />
+              <PremiumComparison language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/questions" component={Questions} />
@@ -152,15 +166,11 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <OnboardingContainer>
-            <div className="min-h-screen flex flex-col">
+            <PremiumLayout language={language} onLanguageChange={setLanguage}>
               <Toaster />
-              <Header language={language} onLanguageChange={setLanguage} />
-              <main className="flex-1">
-                <Router />
-              </main>
-              <Footer />
-            </div>
-            <CookieBanner />
+              <Router language={language} />
+              <CookieBanner />
+            </PremiumLayout>
           </OnboardingContainer>
         </TooltipProvider>
       </QueryClientProvider>
