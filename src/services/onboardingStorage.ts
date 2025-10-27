@@ -1,4 +1,5 @@
 import { OnboardingData, OnboardingExportData } from '../types/onboarding';
+import { generatePensionPDF, PDFGeneratorOptions } from './pdf-generator';
 
 const STORAGE_KEY = 'pension_calculator_onboarding';
 const VERSION = '1.0.0';
@@ -181,20 +182,20 @@ export class OnboardingStorageService {
   }
 
   // Export data as JSON
-  exportData(): OnboardingExport | null {
+  exportData(): OnboardingExportData | null {
     const data = this.loadData();
     if (!data || !data.completedAt) return null;
 
     return {
       data: data as OnboardingData,
-      exportedAt: new Date(),
+      exportedAt: new Date().toISOString(),
       version: VERSION,
       checksum: this.generateChecksum(data)
     };
   }
 
   // Import data from JSON
-  importData(exportData: OnboardingExport): boolean {
+  importData(exportData: OnboardingExportData): boolean {
     try {
       // Validate checksum if present
       if (exportData.checksum) {
@@ -244,12 +245,51 @@ export class OnboardingStorageService {
     }
   }
 
-  // Backup data to download
-  downloadBackup(): void {
+  // Backup data to download as PDF (falls back to JSON on error)
+  async downloadBackup(): Promise<void> {
     const exportData = this.exportData();
     if (!exportData) {
       console.error('No data to export');
       return;
+    }
+
+    // Build minimal PDF options from available onboarding data
+    const options: PDFGeneratorOptions = {
+      language: 'de',
+      formData: exportData.data,
+      // Provide sensible defaults for simulationResults and costSettings so PDF generator won't crash
+      simulationResults: {
+        kpis: {
+          projectedValue: 0,
+          monthlyPension: 0,
+          targetGap: 0,
+          totalContributions: 0,
+          capitalGains: 0,
+          totalFees: 0,
+          totalTaxes: 0,
+          totalCosts: 0,
+          netReturn: 0
+        }
+      } as any,
+      costSettings: {
+        expectedReturn: 0.05,
+        ter: 0.01,
+        policyFeeAnnualPct: 0.0,
+        policyFixedAnnual: 0,
+        taxRatePayout: 0.0,
+        volatility: 0.1,
+        rebalancingEnabled: false
+      } as any,
+      comparisonData: []
+    };
+
+    try {
+      // generatePensionPDF will trigger the browser download via jsPDF.save()
+      await generatePensionPDF(options);
+      return;
+    } catch (err) {
+      console.error('PDF generation failed, falling back to JSON export:', err);
+      // fallback to JSON download
     }
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -270,7 +310,7 @@ export class OnboardingStorageService {
   async restoreFromFile(file: File): Promise<boolean> {
     try {
       const text = await file.text();
-      const exportData: OnboardingExport = JSON.parse(text);
+      const exportData: OnboardingExportData = JSON.parse(text);
       return this.importData(exportData);
     } catch (error) {
       console.error('Failed to restore from file:', error);

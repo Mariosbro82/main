@@ -15,7 +15,31 @@ import { motion } from "framer-motion";
 
 // Get base path from environment (matches vite.config.ts)
 // For GitHub Pages, this will be "/german-pension-calculator/" in production, "/" in development
+// At runtime we prefer a <base> tag if present (proxied pages inject one). This makes
+// routing resilient when the app is served from a subdirectory or via the capture proxy.
 const base = import.meta.env.BASE_URL;
+
+// Compute the effective base at runtime. If a <base href="..."> tag exists in the
+// document (injected by the proxy or set by the hosting), prefer that. Otherwise fall
+// back to the build-time `base` value.
+const getRuntimeBase = (): string => {
+  try {
+    const baseEl = typeof document !== 'undefined' ? document.querySelector('base') : null;
+    if (baseEl) {
+      const href = baseEl.getAttribute('href') || '';
+      if (href) {
+        // Resolve against current location to get a normalized pathname
+        const resolved = new URL(href, window.location.href);
+        const path = resolved.pathname;
+        return path.endsWith('/') ? path : path + '/';
+      }
+    }
+  } catch (e) {
+    // ignore and fall back
+  }
+
+  return base || '/';
+};
 
 /**
  * Custom location hook for GitHub Pages subdirectory deployment.
@@ -28,12 +52,18 @@ const base = import.meta.env.BASE_URL;
  * Example: Browser sees "/app/calculator" → Router matches "/calculator"
  */
 const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void] => {
+  const runtimeBase = getRuntimeBase();
+
   const [loc, setLoc] = useState(() => {
-    const path = window.location.pathname;
+    // GitHub Pages SPA redirect encodes the actual route in the query string as '?/actual/path'
+    // e.g. https://user.github.io/repo/?/calculator -> location.search starts with '?/calculator'
+    const search = window.location.search || "";
+    const searchRouteMatch = search.match(/^\/?(\/.*)/);
+    const path = searchRouteMatch ? searchRouteMatch[1] : window.location.pathname;
     // Remove base path from pathname for route matching
     // Handle edge cases: "/app/" -> "/", "/app/calculator" -> "/calculator", "/app" -> "/"
-    if (base === "/" || base === "") return path;
-    const normalizedBase = base.replace(/\/$/, ""); // "/app"
+    if (runtimeBase === "/" || runtimeBase === "") return path;
+    const normalizedBase = runtimeBase.replace(/\/$/, ""); // "/app"
     if (path === normalizedBase || path === normalizedBase + "/") return "/";
     if (path.startsWith(normalizedBase + "/")) return path.slice(normalizedBase.length);
     return path;
@@ -41,13 +71,15 @@ const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void]
 
   useEffect(() => {
     const handler = () => {
-      const path = window.location.pathname;
-      // Apply same normalization logic
-      if (base === "/" || base === "") {
+      const search = window.location.search || "";
+      const searchRouteMatch = search.match(/^\/?(\/.*)/);
+      const path = searchRouteMatch ? searchRouteMatch[1] : window.location.pathname;
+      // Apply same normalization logic using the runtime base
+      if (runtimeBase === "/" || runtimeBase === "") {
         setLoc(path);
         return;
       }
-      const normalizedBase = base.replace(/\/$/, "");
+      const normalizedBase = runtimeBase.replace(/\/$/, "");
       if (path === normalizedBase || path === normalizedBase + "/") {
         setLoc("/");
       } else if (path.startsWith(normalizedBase + "/")) {
@@ -62,18 +94,19 @@ const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void]
     return () => window.removeEventListener("popstate", handler);
   }, []);
 
-  const navigate = (to: string, options?: any) => {
-    // Add base path back when navigating
-    const fullPath = base !== "/" && base !== "" ? `${base.replace(/\/$/, "")}${to}` : to;
+    const navigate = (to: string, options?: any) => {
+      // Add base path back when navigating (use runtime base)
+      const prefix = runtimeBase !== "/" && runtimeBase !== "" ? runtimeBase.replace(/\/$/, "") : "";
+      const fullPath = `${prefix}${to}` || to;
 
-    if (options?.replace) {
-      window.history.replaceState(null, "", fullPath);
-    } else {
-      window.history.pushState(null, "", fullPath);
-    }
+      if (options?.replace) {
+        window.history.replaceState(null, "", fullPath);
+      } else {
+        window.history.pushState(null, "", fullPath);
+      }
 
-    setLoc(to);
-  };
+      setLoc(to);
+    };
 
   return [loc, navigate];
 };

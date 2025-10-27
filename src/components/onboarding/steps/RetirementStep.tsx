@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
-import { PiggyBank, TrendingUp, Shield, Building2, Calculator } from 'lucide-react';
-import PensionComparisonModal from '../../comparison/PensionComparisonModal';
+import { PiggyBank, TrendingUp, Shield, Building2 } from 'lucide-react';
 
 const RetirementStep: React.FC = () => {
   const { data, updateRetirementData } = useOnboardingStore();
-  const [showComparison, setShowComparison] = useState(false);
+
 
   const retirement = {
     privatePension: data.privatePension || { contribution: 0 },
@@ -298,30 +297,7 @@ const RetirementStep: React.FC = () => {
           </div>
         )}
 
-      {/* Comparison Button */}
-      {(retirement?.privatePension?.contribution || 
-        (retirement?.privatePension?.contribution_A && retirement?.privatePension?.contribution_B)) && (
-        <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Calculator className="h-6 w-6 text-blue-600" />
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Vergleich mit Fonds-Sparplan</h3>
-                <p className="text-sm text-gray-600">
-                  Vergleichen Sie Ihre Private Rente mit einem Fonds-Sparplan
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowComparison(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center space-x-2"
-            >
-              <Calculator className="h-4 w-4" />
-              <span>Private Rente vergleichen</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Comparison block removed because it caused incorrect navigation */}
 
       {/* Info Box */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-6">
@@ -339,11 +315,7 @@ const RetirementStep: React.FC = () => {
         </div>
       </div>
 
-      {/* Comparison Modal */}
-      <PensionComparisonModal 
-        isOpen={showComparison} 
-        onClose={() => setShowComparison(false)} 
-      />
+      {/* Comparison modal removed */}
     </div>
   );
 };

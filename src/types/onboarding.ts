@@ -163,4 +163,5 @@ export interface OnboardingExportData {
   data: OnboardingData;
   exportedAt: string;
   version: string;
+  checksum?: string;
 }
