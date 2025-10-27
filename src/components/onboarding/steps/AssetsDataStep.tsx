@@ -83,7 +83,7 @@ const AssetsDataStep: React.FC = () => {
               value={getCurrentValue('lifeInsurance', 'sum') || ''}
               onChange={(e) => handleAssetChange('lifeInsurance', 'sum', parseFloat(e.target.value) || 0, person)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="z.B. 25000"
+              placeholder="Bitte eingeben (z.B. 25000)"
             />
             {getCurrentValue('lifeInsurance', 'sum') > 0 && (
               <p className="text-xs text-gray-500 mt-1">
@@ -111,7 +111,7 @@ const AssetsDataStep: React.FC = () => {
               value={getCurrentValue('funds', 'balance') || ''}
               onChange={(e) => handleAssetChange('funds', 'balance', parseFloat(e.target.value) || 0, person)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="z.B. 50000"
+              placeholder="Bitte eingeben (z.B. 50000)"
             />
             {getCurrentValue('funds', 'balance') > 0 && (
               <p className="text-xs text-gray-500 mt-1">
@@ -139,7 +139,7 @@ const AssetsDataStep: React.FC = () => {
               value={getCurrentValue('savings', 'balance') || ''}
               onChange={(e) => handleAssetChange('savings', 'balance', parseFloat(e.target.value) || 0, person)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="z.B. 15000"
+              placeholder="Bitte eingeben (z.B. 15000)"
             />
             {getCurrentValue('savings', 'balance') > 0 && (
               <p className="text-xs text-gray-500 mt-1">
@@ -212,7 +212,7 @@ const AssetsDataStep: React.FC = () => {
                 value={mortgage.remainingDebtNow || ''}
                 onChange={(e) => handleAssetChange('mortgage', 'remainingDebtNow', parseFloat(e.target.value) || 0)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="z.B. 250000"
+                placeholder="Bitte eingeben (z.B. 250000)"
                 required
               />
               {mortgage.remainingDebtNow && mortgage.remainingDebtNow > 0 && (
@@ -256,7 +256,7 @@ const AssetsDataStep: React.FC = () => {
                 value={mortgage.remainingDebtAtFixationEnd || ''}
                 onChange={(e) => handleAssetChange('mortgage', 'remainingDebtAtFixationEnd', parseFloat(e.target.value) || 0)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="z.B. 180000"
+                placeholder="Bitte eingeben (z.B. 180000)"
                 required
               />
               {mortgage.remainingDebtAtFixationEnd && mortgage.remainingDebtAtFixationEnd > 0 && (

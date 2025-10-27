@@ -151,14 +151,14 @@ const PersonalDataStep: React.FC = () => {
             type="number"
             min="1900"
             max={new Date().getFullYear()}
-            value={personal.birthYear || 0}
+            value={personal.birthYear === 0 ? '' : personal.birthYear}
             onChange={(e) => handleBirthYearChange(parseInt(e.target.value) || 0)}
             onFocus={() => setFocusedField('birthYear')}
             onBlur={() => setFocusedField(null)}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
               validationMessages.birthYear ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
             }`}
-            placeholder="z.B. 1985"
+            placeholder="Bitte eingeben (z.B. 1985)"
             required
           />
           {validationMessages.birthYear && (
@@ -184,14 +184,14 @@ const PersonalDataStep: React.FC = () => {
             type="number"
             min="0"
             max="120"
-            value={personal.age || 0}
+            value={personal.age === 0 ? '' : personal.age}
             onChange={(e) => handleAgeChange(parseInt(e.target.value) || 0)}
             onFocus={() => setFocusedField('age')}
             onBlur={() => setFocusedField(null)}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
               validationMessages.age ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'
             }`}
-            placeholder="z.B. 38"
+            placeholder="Bitte eingeben (z.B. 38)"
           />
           {validationMessages.age && (
             <div className="flex items-center mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
@@ -343,10 +343,10 @@ const PersonalDataStep: React.FC = () => {
                 type="number"
                 min="0"
                 max="20"
-                value={personal.children.count || 0}
+                value={personal.children.count === 0 ? '' : personal.children.count}
                 onChange={(e) => handleChildrenChange(true, parseInt(e.target.value) || 0)}
                 className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0"
+                placeholder="Anzahl"
               />
             </div>
           )}

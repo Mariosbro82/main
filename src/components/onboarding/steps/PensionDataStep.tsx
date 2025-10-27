@@ -80,7 +80,7 @@ const PensionDataStep: React.FC = () => {
               value={getCurrentValue('pensions', 'public67') || ''}
               onChange={(e) => handlePensionChange('pensions', 'public67', parseFloat(e.target.value) || 0, person)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="z.B. 1200"
+              placeholder="Optional (z.B. 1200)"
             />
             {getCurrentValue('pensions', 'public67') > 0 && (
               <p className="text-xs text-gray-500 mt-1">
