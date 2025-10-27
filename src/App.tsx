@@ -81,6 +81,8 @@ const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void]
 // Lazy load ALL pages for optimal performance and code splitting
 const PremiumDashboard = lazy(() => import("@/pages/PremiumDashboard"));
 const PremiumCalculator = lazy(() => import("@/pages/PremiumCalculator"));
+const PremiumFunds = lazy(() => import("@/pages/PremiumFunds"));
+const PremiumComparison = lazy(() => import("@/pages/PremiumComparison"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Home = lazy(() => import("@/pages/home"));
 const Questions = lazy(() => import("@/pages/questions"));
@@ -126,22 +128,22 @@ function Router({ language }: { language: 'de' | 'en' }) {
           </Route>
           <Route path="/fonds">
             <ErrorBoundary>
-              <Home initialTab="funds" />
+              <PremiumFunds language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/fund-performance">
             <ErrorBoundary>
-              <Home initialTab="fund-performance" />
+              <PremiumFunds language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/vergleich">
             <ErrorBoundary>
-              <Home initialTab="comparison" />
+              <PremiumComparison language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/custom-comparison">
             <ErrorBoundary>
-              <Home initialTab="custom-comparison" />
+              <PremiumComparison language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/questions" component={Questions} />
