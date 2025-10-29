@@ -1,7 +1,7 @@
 import React from 'react';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { formatCurrency } from '../../../utils/onboardingValidation';
-import { Shield, Building, Briefcase, Users, Heart, Piggy, Landmark } from 'lucide-react';
+import { Shield, Building, Briefcase, Users, Heart, PiggyBank, Landmark } from 'lucide-react';
 
 const PensionDataStep: React.FC = () => {
   const { data, updateData } = useOnboardingStore();
@@ -205,7 +205,7 @@ const PensionDataStep: React.FC = () => {
         {/* Riester */}
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <h4 className="text-lg font-medium text-gray-900 mb-4">
-            <Piggy className="inline h-5 w-5 mr-2" />
+            <PiggyBank className="inline h-5 w-5 mr-2" />
             Riester-Rente{personLabel}
           </h4>
           <div>

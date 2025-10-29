@@ -2,6 +2,7 @@ import React from 'react';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { formatCurrency } from '../../../utils/onboardingValidation';
 import { Euro, TrendingUp, Building2 } from 'lucide-react';
+import type { IncomeData } from '@/types/onboarding';
 
 const IncomeStep: React.FC = () => {
   const { data, updateIncomeData } = useOnboardingStore();
