@@ -34,6 +34,17 @@ const OnboardingWizard: React.FC = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
   
   const totalSteps = getTotalSteps();
+  
+  // Define step data early so it can be used in calculations
+  const stepData = [
+    { id: 'personal', title: 'Persönlich', description: 'Grunddaten' },
+    { id: 'income', title: 'Einkommen', description: 'Gehalt & Bonus' },
+    { id: 'pensions', title: 'Renten', description: 'Bestehende Renten' },
+    { id: 'retirement', title: 'Ruhestand', description: 'Rentenpläne' },
+    { id: 'assets', title: 'Vermögen', description: 'Bestehende Assets' },
+    { id: 'mortgage', title: 'Immobilien', description: 'Hypotheken' },
+    { id: 'summary', title: 'Zusammenfassung', description: 'Übersicht' }
+  ];
 
   useEffect(() => {
     initializeOnboarding();
@@ -41,6 +52,9 @@ const OnboardingWizard: React.FC = () => {
 
   const currentStepData = getCurrentStep();
   const progress = getProgress();
+  
+  // Calculate current step index from the step ID
+  const currentStepIndex = stepData.findIndex(step => step.id === currentStepData.id);
 
   const handleNext = async () => {
     setIsTransitioning(true);
@@ -112,16 +126,6 @@ const OnboardingWizard: React.FC = () => {
     }
   };
 
-  const stepData = [
-    { id: 'personal', title: 'Persönlich', description: 'Grunddaten' },
-    { id: 'income', title: 'Einkommen', description: 'Gehalt & Bonus' },
-    { id: 'pensions', title: 'Renten', description: 'Bestehende Renten' },
-    { id: 'retirement', title: 'Ruhestand', description: 'Rentenpläne' },
-    { id: 'assets', title: 'Vermögen', description: 'Bestehende Assets' },
-    { id: 'mortgage', title: 'Immobilien', description: 'Hypotheken' },
-    { id: 'summary', title: 'Zusammenfassung', description: 'Übersicht' }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col">
       {/* Enhanced Header */}
@@ -176,7 +180,7 @@ const OnboardingWizard: React.FC = () => {
           {/* Step Info */}
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-700 font-medium">
-              Schritt {typeof currentStep === 'number' ? currentStep + 1 : 1} von {totalSteps} • {stepData[typeof currentStep === 'number' ? currentStep : 0]?.title}
+              Schritt {currentStepIndex + 1} von {totalSteps} • {stepData[currentStepIndex]?.title || 'Unbekannt'}
             </span>
             <span className="text-blue-600 font-semibold">
               {Math.round(progress)}% abgeschlossen
@@ -250,14 +254,13 @@ const OnboardingWizard: React.FC = () => {
               {/* Enhanced Step Dots */}
               <div className="flex space-x-3">
                 {Array.from({ length: totalSteps }, (_, index) => {
-                  const currentStepNum = typeof currentStep === 'number' ? currentStep : 0;
                   return (
                   <div
                     key={index}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index === currentStepNum
+                      index === currentStepIndex
                         ? 'bg-blue-600 ring-4 ring-blue-200 scale-125'
-                        : index < currentStepNum
+                        : index < currentStepIndex
                         ? 'bg-green-500 scale-110'
                         : 'bg-gray-300'
                     }`}
