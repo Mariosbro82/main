@@ -13,21 +13,20 @@ import LoadingSpinner from '../ui/loading-spinner';
 // import { ProgressIndicator } from '../ui/progress-indicator';
 
 const OnboardingWizard: React.FC = () => {
-  const {
-    currentStep,
-    nextStep,
-    previousStep,
-    completeOnboarding,
-    resetOnboarding,
-    initializeOnboarding,
-    errors,
-    getCurrentStep,
-    canProceed,
-    getProgress,
-    isLastStep,
-    isFirstStep,
-    getTotalSteps
-  } = useOnboardingStore();
+  // Subscribe to specific store values to ensure re-renders
+  const currentStep = useOnboardingStore((state) => state.currentStep);
+  const errors = useOnboardingStore((state) => state.errors);
+  const nextStep = useOnboardingStore((state) => state.nextStep);
+  const previousStep = useOnboardingStore((state) => state.previousStep);
+  const completeOnboarding = useOnboardingStore((state) => state.completeOnboarding);
+  const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
+  const initializeOnboarding = useOnboardingStore((state) => state.initializeOnboarding);
+  const getCurrentStep = useOnboardingStore((state) => state.getCurrentStep);
+  const canProceed = useOnboardingStore((state) => state.canProceed);
+  const getProgress = useOnboardingStore((state) => state.getProgress);
+  const isLastStep = useOnboardingStore((state) => state.isLastStep);
+  const isFirstStep = useOnboardingStore((state) => state.isFirstStep);
+  const getTotalSteps = useOnboardingStore((state) => state.getTotalSteps);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -50,11 +49,14 @@ const OnboardingWizard: React.FC = () => {
     initializeOnboarding();
   }, [initializeOnboarding]);
 
+  // Recalculate these whenever currentStep changes
   const currentStepData = getCurrentStep();
   const progress = getProgress();
   
-  // Calculate current step index from the step ID
-  const currentStepIndex = stepData.findIndex(step => step.id === currentStepData.id);
+  // Calculate current step index from the step ID - this will update when currentStep changes
+  const currentStepIndex = React.useMemo(() => {
+    return stepData.findIndex(step => step.id === currentStepData.id);
+  }, [currentStepData.id, stepData]);
 
   const handleNext = async () => {
     setIsTransitioning(true);
