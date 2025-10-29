@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import {
@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 
 interface PremiumDashboardProps {
   language?: 'de' | 'en';
@@ -33,6 +34,10 @@ interface PremiumDashboardProps {
 
 export const PremiumDashboard: React.FC<PremiumDashboardProps> = ({ language = 'de' }) => {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  
+  // Fetch onboarding data from store
+  const onboardingData = useOnboardingStore((state) => state.data);
+  const isCompleted = useOnboardingStore((state) => state.isCompleted);
 
   const texts = {
     de: {
@@ -134,40 +139,83 @@ export const PremiumDashboard: React.FC<PremiumDashboardProps> = ({ language = '
     },
   ];
 
-  const kpis = [
-    {
-      label: t.currentSavings,
-      value: '€45,280',
-      change: '+12.5%',
-      trend: 'up' as const,
-      icon: PieChart,
-      color: 'from-blue-500 to-blue-600',
-    },
-    {
-      label: t.projectedRetirement,
-      value: '€2,450',
-      change: language === 'de' ? 'pro Monat' : 'per month',
-      trend: 'up' as const,
-      icon: Target,
-      color: 'from-green-500 to-green-600',
-    },
-    {
-      label: t.monthlyContribution,
-      value: '€380',
-      change: language === 'de' ? 'empfohlen: €450' : 'recommended: €450',
-      trend: 'neutral' as const,
-      icon: TrendingUp,
-      color: 'from-purple-500 to-purple-600',
-    },
-    {
-      label: t.yearsUntilRetirement,
-      value: '28',
-      change: language === 'de' ? 'Bis 2052' : 'Until 2052',
-      trend: 'neutral' as const,
-      icon: Clock,
-      color: 'from-orange-500 to-orange-600',
-    },
-  ];
+  // Calculate KPIs from onboarding data
+  const kpis = useMemo(() => {
+    // Calculate total current savings/assets
+    const lifeInsuranceValue = onboardingData.lifeInsurance?.sum || 0;
+    const fundsValue = onboardingData.funds?.balance || 0;
+    const savingsValue = onboardingData.savings?.balance || 0;
+    const totalSavings = lifeInsuranceValue + fundsValue + savingsValue;
+
+    // Calculate monthly contributions
+    const privatePensionContrib = onboardingData.privatePension?.contribution || 0;
+    const riesterContrib = onboardingData.riester?.amount || 0;
+    const ruerupContrib = onboardingData.ruerup?.amount || 0;
+    const occupationalContrib = onboardingData.occupationalPension?.amount || 0;
+    const totalMonthlyContrib = privatePensionContrib + riesterContrib + ruerupContrib + occupationalContrib;
+
+    // Calculate projected retirement income
+    const publicPension = onboardingData.pensions?.public67 || 0;
+    const civilPension = onboardingData.pensions?.civil67 || 0;
+    const professionPension = onboardingData.pensions?.profession67 || 0;
+    const zvkVblPension = onboardingData.pensions?.zvkVbl67 || 0;
+    const totalProjectedPension = publicPension + civilPension + professionPension + zvkVblPension;
+
+    // Calculate years until retirement (assuming retirement at 67)
+    const currentYear = new Date().getFullYear();
+    const birthYear = onboardingData.personal?.birthYear;
+    const yearsToRetirement = birthYear ? 67 - (currentYear - birthYear) : 0;
+    const retirementYear = birthYear ? birthYear + 67 : currentYear;
+
+    // Format currency
+    const formatCurrency = (value: number) => {
+      if (value === 0) return language === 'de' ? 'Nicht angegeben' : 'Not specified';
+      return new Intl.NumberFormat(language === 'de' ? 'de-DE' : 'en-US', {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: 0,
+      }).format(value);
+    };
+
+    return [
+      {
+        label: t.currentSavings,
+        value: formatCurrency(totalSavings),
+        change: isCompleted ? '+12.5%' : (language === 'de' ? 'Onboarding abschließen' : 'Complete onboarding'),
+        trend: totalSavings > 0 ? 'up' as const : 'neutral' as const,
+        icon: PieChart,
+        color: 'from-blue-500 to-blue-600',
+      },
+      {
+        label: t.projectedRetirement,
+        value: formatCurrency(totalProjectedPension),
+        change: language === 'de' ? 'pro Monat' : 'per month',
+        trend: totalProjectedPension > 0 ? 'up' as const : 'neutral' as const,
+        icon: Target,
+        color: 'from-green-500 to-green-600',
+      },
+      {
+        label: t.monthlyContribution,
+        value: formatCurrency(totalMonthlyContrib),
+        change: totalMonthlyContrib > 0 
+          ? (language === 'de' ? `Aktiv: ${formatCurrency(totalMonthlyContrib)}` : `Active: ${formatCurrency(totalMonthlyContrib)}`)
+          : (language === 'de' ? 'Keine Beiträge' : 'No contributions'),
+        trend: 'neutral' as const,
+        icon: TrendingUp,
+        color: 'from-purple-500 to-purple-600',
+      },
+      {
+        label: t.yearsUntilRetirement,
+        value: yearsToRetirement > 0 ? yearsToRetirement.toString() : '-',
+        change: yearsToRetirement > 0 
+          ? (language === 'de' ? `Bis ${retirementYear}` : `Until ${retirementYear}`)
+          : (language === 'de' ? 'Geburtsjahr angeben' : 'Enter birth year'),
+        trend: 'neutral' as const,
+        icon: Clock,
+        color: 'from-orange-500 to-orange-600',
+      },
+    ];
+  }, [onboardingData, isCompleted, language, t]);
 
   const features = [
     {
@@ -252,12 +300,6 @@ export const PremiumDashboard: React.FC<PremiumDashboardProps> = ({ language = '
                         {kpi.trend === 'up' && (
                           <div className="flex items-center gap-1 text-xs font-semibold text-success bg-success-light px-2 py-1 rounded-full">
                             <TrendingUp className="h-3 w-3" />
-                            {kpi.change}
-                          </div>
-                        )}
-                        {kpi.trend === 'down' && (
-                          <div className="flex items-center gap-1 text-xs font-semibold text-destructive bg-destructive/10 px-2 py-1 rounded-full">
-                            <TrendingDown className="h-3 w-3" />
                             {kpi.change}
                           </div>
                         )}
