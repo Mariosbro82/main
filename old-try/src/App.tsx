@@ -112,6 +112,7 @@ const useGitHubPagesLocation = (): [string, (to: string, options?: any) => void]
 };
 
 // Lazy load ALL pages for optimal performance and code splitting
+const EnhancedDashboard = lazy(() => import("@/pages/EnhancedDashboard"));
 const PremiumDashboard = lazy(() => import("@/pages/PremiumDashboard"));
 const PremiumCalculator = lazy(() => import("@/pages/PremiumCalculator"));
 const PremiumFunds = lazy(() => import("@/pages/PremiumFunds"));
@@ -151,7 +152,12 @@ function Router({ language }: { language: 'de' | 'en' }) {
         <Switch>
           <Route path="/">
             <ErrorBoundary>
-              <PremiumDashboard language={language} />
+              <EnhancedDashboard language={language} />
+            </ErrorBoundary>
+          </Route>
+          <Route path="/dashboard">
+            <ErrorBoundary>
+              <EnhancedDashboard language={language} />
             </ErrorBoundary>
           </Route>
           <Route path="/calculator">
