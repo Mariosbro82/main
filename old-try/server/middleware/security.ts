@@ -41,22 +41,46 @@ export const corsOptions = {
 };
 
 // Helmet configuration
-export const helmetConfig = helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Tailwind
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
-    },
-  },
-  crossOriginEmbedderPolicy: false, // Disable for GitHub Pages compatibility
-});
+// In development, relax CSP to support Vite HMR and React Refresh preamble (inline module script)
+// In production, keep a stricter policy
+const isDev = process.env.NODE_ENV !== 'production';
+
+export const helmetConfig = isDev
+  ? helmet({
+      contentSecurityPolicy: {
+        directives: {
+          // Keep defaults tight but allow what Vite needs in dev
+          defaultSrc: ["'self'"],
+          // Allow inline module preamble and eval used by React Refresh/HMR
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:'],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          // Allow HMR websocket and XHR/fetch to same-origin and common schemes
+          connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:', 'http://localhost:*', 'http://127.0.0.1:*'],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          fontSrc: ["'self'", 'data:'],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    })
+  : helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Tailwind
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false, // Disable for GitHub Pages compatibility
+    });
 
 // Rate limiting configuration
 export const limiter = rateLimit({

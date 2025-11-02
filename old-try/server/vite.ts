@@ -32,8 +32,10 @@ export async function setupVite(app: Express, server: Server) {
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
+        console.error('[VITE ERROR]', msg);
         viteLogger.error(msg, options);
-        process.exit(1);
+        // DO NOT exit process on Vite errors - just log them
+        // process.exit(1); // REMOVED - was causing server crashes
       },
     },
     server: serverOptions,
@@ -43,6 +45,7 @@ export async function setupVite(app: Express, server: Server) {
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+    console.log(`[VITE] Handling request: ${url}`);
 
     try {
       const clientTemplate = path.resolve(

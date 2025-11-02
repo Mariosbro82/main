@@ -10,7 +10,7 @@
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 // CORS configuration
 export const corsOptions = {
@@ -40,39 +40,57 @@ export const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+const fontSources = ["'self'", 'data:', 'https://fonts.gstatic.com'];
+
+const productionDirectives = {
+  defaultSrc: ["'self'"],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'], // Allow inline styles and Google Fonts
+  scriptSrc: ["'self'"],
+  imgSrc: ["'self'", 'data:', 'https:'],
+  connectSrc: ["'self'"],
+  fontSrc: fontSources,
+  objectSrc: ["'none'"],
+  mediaSrc: ["'self'"],
+  frameSrc: ["'none'"],
+};
+
+const developmentDirectives = {
+  ...productionDirectives,
+  // Vite dev server injects inline scripts, eval, blob URLs, and HMR websocket connections.
+  scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:'],
+  connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:'],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+  imgSrc: ["'self'", 'data:', 'https:'],
+  fontSrc: fontSources,
+};
+
 // Helmet configuration
 export const helmetConfig = helmet({
   contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Tailwind
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
-    },
+    directives: isProduction ? productionDirectives : developmentDirectives,
   },
   crossOriginEmbedderPolicy: false, // Disable for GitHub Pages compatibility
 });
 
 // Rate limiting configuration
-export const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  handler: (req: Request, res: Response) => {
-    const rateLimit = (req as any).rateLimit;
-    res.status(429).json({
-      message: 'Too many requests, please try again later.',
-      retryAfter: Math.ceil(rateLimit?.resetTime ? (rateLimit.resetTime.getTime() - Date.now()) / 1000 : 900),
-    });
-  },
-});
+export const limiter = isProduction
+  ? rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // Limit each IP to 100 requests per windowMs
+      message: 'Too many requests from this IP, please try again later.',
+      standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+      legacyHeaders: false, // Disable `X-RateLimit-*` headers
+      handler: (req: Request, res: Response) => {
+        const rateLimit = (req as any).rateLimit;
+        res.status(429).json({
+          message: 'Too many requests, please try again later.',
+          retryAfter: Math.ceil(rateLimit?.resetTime ? (rateLimit.resetTime.getTime() - Date.now()) / 1000 : 900),
+        });
+      },
+    })
+  : (_req: Request, _res: Response, next: NextFunction) => next();
 
 // Strict rate limiter for auth endpoints
 export const authLimiter = rateLimit({

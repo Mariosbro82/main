@@ -96,25 +96,44 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  const appEnv = app.get("env");
+  console.log(`[DEBUG] app.get("env") = "${appEnv}"`);
+  console.log(`[DEBUG] process.env.NODE_ENV = "${process.env.NODE_ENV}"`);
+  console.log(`[DEBUG] Will use ${appEnv === "development" ? "Vite dev server" : "static files"}`);
+  
+  // Add test endpoint to verify Express is working
+  app.get('/test-ping', (req, res) => {
+    console.log('[DEBUG] Test ping endpoint hit!');
+    res.json({ status: 'OK', message: 'Express server is working!' });
+  });
+
+  if (appEnv === "development") {
+    console.log('[DEBUG] Setting up Vite dev server...');
     await setupVite(app, server);
+    console.log('[DEBUG] Vite dev server setup complete');
   } else {
+    console.log('[DEBUG] Serving static files from dist/');
     serveStatic(app);
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
+  // Other ports are firewalled. Default to 3000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
+  const port = parseInt(process.env.PORT || '3000', 10);
+  const host = "127.0.0.1"; // Use IPv4 explicitly instead of localhost
+  console.log(`[DEBUG] Server will bind to ${host}:${port}`);
+  
   server.listen({
     port,
-    host: "localhost",
+    host,
   }, () => {
-    logger.info(`🚀 Server started on port ${port}`, {
+    logger.info(`🚀 Server started on ${host}:${port}`, {
       port,
+      host,
       environment: process.env.NODE_ENV || 'development',
     });
-    log(`serving on port ${port}`);
+    log(`serving on ${host}:${port}`);
+    console.log(`[DEBUG] Server is now listening on http://${host}:${port}`);
   });
 })();

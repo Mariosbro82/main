@@ -12,8 +12,29 @@ interface EnhancedDashboardProps {
 }
 
 export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language = 'de' }) => {
+  console.log('EnhancedDashboard rendering...');
+  
   const onboardingData = useOnboardingStore((state) => state.data);
   const isCompleted = useOnboardingStore((state) => state.isCompleted);
+
+  console.log('Onboarding completed:', isCompleted);
+  console.log('Onboarding data:', onboardingData);
+
+  // Use demo data if onboarding is not completed
+  const demoData = {
+    personal: { birthYear: 1985, maritalStatus: 'single' as const },
+    income: { grossAnnual: 60000, netMonthly: 3500 },
+    pensions: { public67: 1800 },
+    privatePension: { contribution: 300 },
+    lifeInsurance: { sum: 50000 },
+    funds: { balance: 500 },
+    riester: { amount: 0 },
+    ruerup: { amount: 0 },
+    occupationalPension: { amount: 0 },
+  };
+
+  const data = isCompleted ? onboardingData : demoData;
+  console.log('Using data:', data);
 
   const [chartMode, setChartMode] = useState<1 | 2>(1);
   const [showWithdrawalSimulator, setShowWithdrawalSimulator] = useState(false);
@@ -34,7 +55,7 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language =
 
   // Calculate retirement age
   const currentYear = new Date().getFullYear();
-  const birthYear = onboardingData.personal?.birthYear || 1980;
+  const birthYear = data.personal?.birthYear || 1980;
   const currentAge = currentYear - birthYear;
   const retirementAge = 67;
   const yearsUntilRetirement = Math.max(0, retirementAge - currentAge);
@@ -59,7 +80,7 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language =
 
   // Calculate fund value
   const calculateFundValue = (years: number): number => {
-    const monthlyContribution = onboardingData.funds?.balance || 0; // Using balance as proxy for monthly contribution
+    const monthlyContribution = data.funds?.balance || 0; // Using balance as proxy for monthly contribution
     const monthlyRate = (localFundReturn / 100) / 12;
     const salesChargeDeduction = 1 - (localFundSalesCharge / 100);
     const effectiveMonthlyContribution = monthlyContribution * salesChargeDeduction;
@@ -73,13 +94,13 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language =
 
   // Generate chart data
   const generateChartData = () => {
-    const data = [];
+    const chartDataArray = [];
     const startAge = Math.max(currentAge, 60);
     const endAge = 90;
-    const grossIncome = onboardingData.income?.grossAnnual || 0;
-    const expectedStatutoryPension = onboardingData.pensions?.public67 || 0;
-    const vistaPensionMonthly = onboardingData.privatePension?.contribution || 0;
-    const lifeInsuranceMonthly = (onboardingData.lifeInsurance?.sum || 0) / 12; // Convert annual to monthly estimate
+    const grossIncome = data.income?.grossAnnual || 0;
+    const expectedStatutoryPension = data.pensions?.public67 || 0;
+    const vistaPensionMonthly = data.privatePension?.contribution || 0;
+    const lifeInsuranceMonthly = (data.lifeInsurance?.sum || 0) / 12; // Convert annual to monthly estimate
 
     for (let age = startAge; age <= endAge; age++) {
       const year = currentYear + (age - currentAge);
@@ -91,7 +112,7 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language =
       const yearsInvested = Math.min(yearsUntilRetirement, age - currentAge);
       const fundValue = yearsInvested > 0 ? calculateFundValue(yearsInvested) : 0;
 
-      data.push({
+      chartDataArray.push({
         age,
         year,
         netIncome: Math.round(netIncome),
@@ -103,10 +124,10 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language =
       });
     }
 
-    return data;
+    return chartDataArray;
   };
 
-  const chartData = useMemo(() => generateChartData(), [onboardingData, localFundReturn, localFundSalesCharge, localFundManagementFee]);
+  const chartData = useMemo(() => generateChartData(), [data, localFundReturn, localFundSalesCharge, localFundManagementFee]);
 
   // Calculate flexible withdrawal
   const calculateFlexibleWithdrawal = () => {
@@ -130,12 +151,12 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language =
   const withdrawalData = calculateFlexibleWithdrawal();
 
   // Get KPI data
-  const grossIncome = onboardingData.income?.grossAnnual || 0;
-  const expectedPension = onboardingData.pensions?.public67 || 0;
-  const vistaPension = onboardingData.privatePension?.contribution || 0;
-  const monthlyContribution = (onboardingData.riester?.amount || 0) + 
-                             (onboardingData.ruerup?.amount || 0) +
-                             (onboardingData.occupationalPension?.amount || 0);
+  const grossIncome = data.income?.grossAnnual || 0;
+  const expectedPension = data.pensions?.public67 || 0;
+  const vistaPension = data.privatePension?.contribution || 0;
+  const monthlyContribution = (data.riester?.amount || 0) + 
+                             (data.ruerup?.amount || 0) +
+                             (data.occupationalPension?.amount || 0);
 
   const texts = {
     de: {
@@ -192,28 +213,24 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ language =
 
   const t = texts[language];
 
-  if (!isCompleted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>{language === 'de' ? 'Onboarding erforderlich' : 'Onboarding Required'}</CardTitle>
-            <CardDescription>
-              {language === 'de' 
-                ? 'Bitte vervollständigen Sie zunächst das Onboarding.' 
-                : 'Please complete the onboarding first.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <a href="/questions">{language === 'de' ? 'Zum Onboarding' : 'Start Onboarding'}</a>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Note: Component now shows demo data if onboarding is not completed
+  // Users can click "Zum Onboarding" button in the header to complete their profile
 
+  // DEBUG: Test if component renders at all
+  return (
+    <div className="min-h-screen bg-red-500 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-xl max-w-2xl">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Enhanced Dashboard Test</h1>
+        <p className="text-lg text-gray-700 mb-2">Component is rendering!</p>
+        <p className="text-sm text-gray-600">Language: {language}</p>
+        <p className="text-sm text-gray-600">Is Completed: {String(isCompleted)}</p>
+        <p className="text-sm text-gray-600">Birth Year: {data.personal?.birthYear || 'N/A'}</p>
+        <p className="text-sm text-gray-600">Gross Income: {data.income?.grossAnnual || 'N/A'}</p>
+      </div>
+    </div>
+  );
+
+  // ORIGINAL CODE BELOW - will not execute due to return above
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8 px-4">
       <div className="max-w-7xl mx-auto space-y-8">

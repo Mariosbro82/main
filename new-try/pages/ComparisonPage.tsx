@@ -3,8 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, Calculator, Settings, X } from 'lucide-react';
 import { usePensionStore } from '../stores/pensionStore';
+import { useTheme } from '../contexts/ThemeContext';
+import ThemeToggle from '../components/dashboard/ThemeToggle';
 
 export default function ComparisonPage() {
+  const { isDarkMode } = useTheme();
   const {
     birthYear,
     grossIncome,
@@ -136,21 +139,30 @@ export default function ComparisonPage() {
 
   const withdrawalData = calculateFlexibleWithdrawal();
 
+  const bgColor = isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50';
+  const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
+  const mutedTextColor = isDarkMode ? 'text-gray-400' : 'text-gray-600';
+  const cardBg = isDarkMode ? 'bg-gray-800' : 'bg-white';
+  const borderColor = isDarkMode ? 'border-gray-700' : 'border-gray-200';
+
   return (
-    <div className="min-h-screen py-12 px-4">
+    <div className={`min-h-screen py-12 px-4 ${bgColor} transition-colors`}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="flex items-center justify-between mb-12"
         >
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            Ihre Rentenanalyse
-          </h1>
-          <p className="text-gray-600">
-            Vergleichen Sie verschiedene Szenarien und optimieren Sie Ihre Altersvorsorge
-          </p>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+              Ihre Rentenanalyse
+            </h1>
+            <p className={mutedTextColor}>
+              Vergleichen Sie verschiedene Szenarien und optimieren Sie Ihre Altersvorsorge
+            </p>
+          </div>
+          <ThemeToggle />
         </motion.div>
 
         {/* Action Cards */}
@@ -164,8 +176,8 @@ export default function ComparisonPage() {
             <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
               <Calculator className="w-6 h-6 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Steuereinstellungen</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className={`text-lg font-semibold ${textColor} mb-2`}>Steuereinstellungen</h3>
+            <p className={`text-sm ${mutedTextColor}`}>
               Freistellungsauftrag: {freistellungsauftrag.toLocaleString('de-DE')} €
             </p>
           </motion.button>
@@ -174,13 +186,13 @@ export default function ComparisonPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowWithdrawalSimulator(true)}
-            className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all text-left"
+            className={`p-6 ${cardBg} rounded-2xl shadow-lg hover:shadow-xl transition-all text-left border ${borderColor}`}
           >
             <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Entnahmerechner</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className={`text-lg font-semibold ${textColor} mb-2`}>Entnahmerechner</h3>
+            <p className={`text-sm ${mutedTextColor}`}>
               Simulieren Sie flexible Entnahmen aus Ihren Fonds
             </p>
           </motion.button>
@@ -189,24 +201,24 @@ export default function ComparisonPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowFundSettings(true)}
-            className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all text-left"
+            className={`p-6 ${cardBg} rounded-2xl shadow-lg hover:shadow-xl transition-all text-left border ${borderColor}`}
           >
             <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
               <Settings className="w-6 h-6 text-indigo-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Fondseinstellungen</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className={`text-lg font-semibold ${textColor} mb-2`}>Fondseinstellungen</h3>
+            <p className={`text-sm ${mutedTextColor}`}>
               Rendite: {fundReturnRate}% | Ausgabeaufschlag: {fundSalesCharge}%
             </p>
           </motion.button>
         </div>
 
         {/* Chart Mode Toggle - Apple Style */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className={`${cardBg} rounded-2xl shadow-lg p-6 mb-8 border ${borderColor}`}>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Einkommensverlauf</h2>
+            <h2 className={`text-2xl font-bold ${textColor}`}>Einkommensverlauf</h2>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Ansicht wechseln:</span>
+              <span className={`text-sm ${mutedTextColor}`}>Ansicht wechseln:</span>
               <button
                 onClick={() => setChartMode(chartMode === 1 ? 2 : 1)}
                 className={`relative inline-flex items-center h-8 w-16 rounded-full transition-colors ${
@@ -219,7 +231,7 @@ export default function ComparisonPage() {
                   }`}
                 />
               </button>
-              <span className="text-sm font-medium text-gray-700">
+              <span className={`text-sm font-medium ${textColor}`}>
                 {chartMode === 1 ? 'Basis' : 'Detailliert'}
               </span>
             </div>
@@ -343,8 +355,8 @@ export default function ComparisonPage() {
         </div>
 
         {/* Fund Savings Plan Chart */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Fondssparplan Entwicklung</h2>
+        <div className={`${cardBg} rounded-2xl shadow-lg p-6 border ${borderColor}`}>
+          <h2 className={`text-2xl font-bold ${textColor} mb-6`}>Fondssparplan Entwicklung</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />

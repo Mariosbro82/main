@@ -1,36 +1,34 @@
 import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import { StrictMode } from "react";
 
-declare global {
-  interface Window {
-    __APP_BOOTSTRAPPED__?: boolean;
-    __onAppBootstrapped?: () => void;
-    __APP_BOOTSTRAP_FALLBACK__?: {
-      show?: (reason: string, detail?: string) => void;
-      clear?: () => void;
-    };
-    __APP_BOOTSTRAP_RELOAD_KEY__?: string;
-  }
+console.log('[MAIN] Ultra minimal main.tsx starting...');
+
+function UltraMinimalApp() {
+  console.log('[APP] Ultra minimal app rendering...');
+  return (
+    <div style={{ padding: '50px', background: 'purple', color: 'white', minHeight: '100vh' }}>
+      <h1>React is Working!</h1>
+      <p>If you see this, React is successfully mounting.</p>
+      <p>Server is running correctly.</p>
+      <button onClick={() => alert('Click works!')} style={{ padding: '10px 20px', fontSize: '16px' }}>
+        Test Click
+      </button>
+    </div>
+  );
 }
 
 const mount = document.getElementById("root");
+console.log('[MAIN] Root element:', mount);
 
 if (mount) {
-  createRoot(mount).render(<App />);
-  window.__APP_BOOTSTRAPPED__ = true;
-
-  const reloadKey = window.__APP_BOOTSTRAP_RELOAD_KEY__ ?? "__vista_force_reload__";
-  try {
-    sessionStorage.removeItem(reloadKey);
-  } catch (error) {
-    console.warn("[Vista Pension] Failed to reset bootstrap reload marker", error);
-  }
-
-  window.__APP_BOOTSTRAP_FALLBACK__?.clear?.();
-  window.__onAppBootstrapped?.();
+  console.log('[MAIN] Creating root and rendering...');
+  const root = createRoot(mount);
+  root.render(
+    <StrictMode>
+      <UltraMinimalApp />
+    </StrictMode>
+  );
+  console.log('[MAIN] Render complete!');
 } else {
-  console.error("[Vista Pension] Failed to find root element for mounting.");
-  window.__APP_BOOTSTRAPPED__ = false;
-  window.__APP_BOOTSTRAP_FALLBACK__?.show?.("missing-root", "Element #root not found.");
+  console.error('[MAIN] NO ROOT ELEMENT FOUND!');
 }

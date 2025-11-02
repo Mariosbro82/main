@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ultra Simple Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+        }
+        h1 { color: #667eea; margin-bottom: 20px; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { background: #764ba2; }
+        .status { background: #e7f5e7; padding: 20px; border-radius: 8px; margin-top: 20px; border: 2px solid #4caf50; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🎉 Basic HTML Test</h1>
+        <p>If you see this, the server is working!</p>
+        <p id="test">JavaScript: <span style="color: red;">Not Loaded</span></p>
+        <button onclick="testClick()">Click Me!</button>
+        <div class="status">
+            <p style="margin:0; color: #2e7d32;">
+                <strong>✓ Server:</strong> Running<br/>
+                <strong>✓ HTML:</strong> Loaded<br/>
+                <strong>✓ CSS:</strong> Applied<br/>
+                <strong id="js-status">✗ JavaScript: Checking...</strong>
+            </p>
+        </div>
+    </div>
+    <script>
+        console.log('JavaScript is running!');
+        document.getElementById('test').innerHTML = 'JavaScript: <span style="color: green;">✓ Loaded</span>';
+        document.getElementById('js-status').innerHTML = '✓ JavaScript: Working';
+        document.getElementById('js-status').style.color = '#2e7d32';
+        
+        function testClick() {
+            alert('Button clicked! JavaScript is working!');
+            console.log('Button was clicked');
+        }
+        
+        console.log('All systems operational');
+    </script>
+</body>
+</html>
