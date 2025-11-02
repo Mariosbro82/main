@@ -181,6 +181,7 @@ function Router({ language }: { language: 'de' | 'en' }) {
           </Route>
           <Route path="/questions" component={Questions} />
           <Route path="/tax-calculator" component={TaxCalculatorPage} />
+          <Route path="/steuerrechner" component={TaxCalculatorPage} />
           <Route path="/impressum" component={Impressum} />
           <Route path="/datenschutz" component={Datenschutz} />
           <Route path="/agb" component={AGB} />

@@ -122,16 +122,35 @@ export function calculateFundTax(
 }
 
 /**
- * Calculate Ertragsanteil for pension payments
+ * Calculate Ertragsanteil for pension payments according to §22 EStG
  * The taxable portion of pension payments based on age when payments start
+ * Complete table based on Anlage 9 EStG (2024)
  */
 export function getErtragsanteil(ageAtPaymentStart: number): number {
-  // Simplified Ertragsanteil table (2024)
-  if (ageAtPaymentStart >= 67) return 17; // 17% taxable
-  if (ageAtPaymentStart >= 65) return 18; // 18% taxable
-  if (ageAtPaymentStart >= 63) return 19; // 19% taxable
-  if (ageAtPaymentStart >= 60) return 22; // 22% taxable
-  return 25; // 25% taxable for younger ages
+  // Complete Ertragsanteil table according to §22 EStG
+  if (ageAtPaymentStart >= 68) return 17; // 17% taxable
+  if (ageAtPaymentStart === 67) return 17; // 17% taxable
+  if (ageAtPaymentStart === 66) return 18; // 18% taxable
+  if (ageAtPaymentStart === 65) return 18; // 18% taxable
+  if (ageAtPaymentStart === 64) return 19; // 19% taxable
+  if (ageAtPaymentStart === 63) return 19; // 19% taxable
+  if (ageAtPaymentStart === 62) return 20; // 20% taxable
+  if (ageAtPaymentStart === 61) return 21; // 21% taxable
+  if (ageAtPaymentStart === 60) return 22; // 22% taxable
+  if (ageAtPaymentStart === 59) return 23; // 23% taxable
+  if (ageAtPaymentStart === 58) return 24; // 24% taxable
+  if (ageAtPaymentStart === 57) return 25; // 25% taxable
+  if (ageAtPaymentStart === 56) return 26; // 26% taxable
+  if (ageAtPaymentStart === 55) return 27; // 27% taxable
+  if (ageAtPaymentStart === 54) return 28; // 28% taxable
+  if (ageAtPaymentStart === 53) return 29; // 29% taxable
+  if (ageAtPaymentStart === 52) return 30; // 30% taxable
+  if (ageAtPaymentStart === 51) return 31; // 31% taxable
+  if (ageAtPaymentStart === 50) return 32; // 32% taxable
+  if (ageAtPaymentStart === 49) return 33; // 33% taxable
+  if (ageAtPaymentStart === 48) return 34; // 34% taxable
+  if (ageAtPaymentStart === 47) return 35; // 35% taxable
+  return 36; // 36% taxable for younger ages (< 47)
 }
 
 /**

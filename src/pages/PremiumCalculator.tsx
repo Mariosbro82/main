@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboardingStore } from '@/stores/onboardingStore';
+import { getErtragsanteil } from '@/utils/germanTaxCalculations';
 import {
   Calculator,
   TrendingUp,
@@ -13,6 +14,7 @@ import {
   Share2,
   Sparkles,
   AlertCircle,
+  Check,
 } from 'lucide-react';
 import {
   Card,
@@ -61,6 +63,7 @@ interface CalculatorInputs {
   startCapital: number;
   expectedReturn: number;
   inflationRate: number;
+  guaranteeFactor?: 'chance' | 'balance' | 'guarantee'; // Chance Invest, Balanc, Garant
 }
 
 export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language = 'de' }) => {
@@ -73,9 +76,10 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
     currentAge: 35,
     retirementAge: 67,
     monthlyContribution: 300,
-    startCapital: 10000,
+    startCapital: 0, // Default to 0 instead of 10000
     expectedReturn: 6,
     inflationRate: 2,
+    guaranteeFactor: 'chance', // Default: Chance Invest (höchste Rendite)
   });
 
   // Load data from onboarding if available
@@ -89,12 +93,19 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
         ...prev,
         currentAge,
         monthlyContribution: onboardingData.privatePension?.monthlyContribution || prev.monthlyContribution,
-        startCapital: onboardingData.privatePension?.startInvestment || prev.startCapital,
+        startCapital: onboardingData.privatePension?.startInvestment ?? 0, // Use nullish coalescing to handle 0 value
         expectedReturn: onboardingData.privatePension?.expectedReturn || prev.expectedReturn,
       }));
       setShowResults(true); // Auto-show results if data is available
     }
   }, [onboardingData, isCompleted]);
+
+  // Recalculate when product type changes
+  useEffect(() => {
+    if (showResults) {
+      calculatePension();
+    }
+  }, [activeTab]);
 
   const texts = {
     de: {
@@ -111,6 +122,11 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
       startCapital: 'Startkapital',
       expectedReturn: 'Erwartete Rendite',
       inflationRate: 'Inflationsrate',
+      guaranteeFactor: 'Garantiefaktor',
+      guaranteeFactorDesc: 'Wählen Sie Ihre Anlagestrategie',
+      chanceInvest: 'Chance Invest (100% Fonds)',
+      balance: 'Balanc (Mix)',
+      guarantee: 'Garant (Sicherheit)',
       calculate: 'Berechnen',
       calculating: 'Berechne...',
       results: 'Ergebnisse',
@@ -140,6 +156,11 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
       startCapital: 'Starting Capital',
       expectedReturn: 'Expected Return',
       inflationRate: 'Inflation Rate',
+      guaranteeFactor: 'Guarantee Factor',
+      guaranteeFactorDesc: 'Choose your investment strategy',
+      chanceInvest: 'Chance Invest (100% Funds)',
+      balance: 'Balance (Mix)',
+      guarantee: 'Guarantee (Security)',
       calculate: 'Calculate',
       calculating: 'Calculating...',
       results: 'Results',
@@ -159,6 +180,54 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
 
   const t = texts[language];
 
+  // Product-specific parameters (Debeka conditions)
+  const getProductParameters = (productType: string) => {
+    switch (productType) {
+      case 'private-pension':
+        return {
+          taxBenefit: 0, // No direct tax benefit
+          entryFee: 2.5, // 2.5% Ausgabeaufschlag
+          managementFee: 0.3, // 0.3% p.a.
+          adminFee: 12, // 12€ annually
+          taxationType: 'ertragsanteil', // Ertragsanteil-Besteuerung in payout phase
+        };
+      case 'riester':
+        return {
+          taxBenefit: 0.3, // ~30% Steuerersparnis durch Zulagen/Sonderausgaben
+          entryFee: 2.5,
+          managementFee: 0.5, // Higher due to admin requirements
+          adminFee: 12,
+          taxationType: 'full', // Nachgelagerte Besteuerung (100% steuerpflichtig)
+        };
+      case 'ruerup':
+        return {
+          taxBenefit: 0.4, // ~40% Steuerersparnis
+          entryFee: 2.5,
+          managementFee: 0.4,
+          adminFee: 12,
+          taxationType: 'full', // Nachgelagerte Besteuerung (100% steuerpflichtig)
+        };
+      case 'occupational':
+        return {
+          taxBenefit: 0.35, // ~35% durch Sozialabgabenersparnis
+          entryFee: 0, // Usually no entry fee for occupational pensions
+          managementFee: 0.4,
+          adminFee: 0,
+          taxationType: 'full', // Nachgelagerte Besteuerung
+        };
+      default:
+        return {
+          taxBenefit: 0,
+          entryFee: 2.5,
+          managementFee: 0.3,
+          adminFee: 12,
+          taxationType: 'ertragsanteil',
+        };
+    }
+  };
+
+  const productParams = getProductParameters(activeTab);
+
   // Calculate pension
   const calculatePension = () => {
     setIsCalculating(true);
@@ -169,29 +238,72 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
     }, 1500);
   };
 
-  // Generate chart data
+  // Generate chart data with realistic Debeka costs
   const years = inputs.retirementAge - inputs.currentAge;
   const chartData = [];
   let currentCapital = inputs.startCapital;
+  
+  // Calculate total costs over lifetime
+  const annualContributions = inputs.monthlyContribution * 12;
+  const totalLifetimeContributions = annualContributions * years;
+  
+  // Entry fee (Ausgabeaufschlag) - applied to all contributions
+  const entryFeeAmount = totalLifetimeContributions * (productParams.entryFee / 100);
+  
+  // Management fee + admin fee per year
+  const annualAdminFee = productParams.adminFee;
 
   for (let year = 0; year <= years; year++) {
     const contributions = inputs.monthlyContribution * 12 * year;
+    
+    // Apply entry fee to contributions
+    const netContributions = contributions * (1 - productParams.entryFee / 100);
     const totalInvested = inputs.startCapital + contributions;
-    const returns = currentCapital * (inputs.expectedReturn / 100);
-    currentCapital = currentCapital + (inputs.monthlyContribution * 12) + returns;
+    
+    // Calculate annual costs
+    const managementFeeCost = currentCapital * (productParams.managementFee / 100);
+    const totalAnnualCosts = managementFeeCost + annualAdminFee;
+    
+    // Net return after costs
+    const grossReturns = currentCapital * (inputs.expectedReturn / 100);
+    const netReturns = grossReturns - totalAnnualCosts;
+    
+    // Add this year's contribution (after entry fee) and net returns
+    const yearlyContribution = inputs.monthlyContribution * 12 * (1 - productParams.entryFee / 100);
+    currentCapital = Math.max(0, currentCapital + yearlyContribution + netReturns);
 
     chartData.push({
       year: inputs.currentAge + year,
       capital: Math.round(currentCapital),
       contributions: Math.round(totalInvested),
-      returns: Math.round(currentCapital - totalInvested),
+      returns: Math.round(currentCapital - netContributions - inputs.startCapital),
     });
   }
 
   const finalCapital = chartData[chartData.length - 1]?.capital || 0;
   const totalContributions = chartData[chartData.length - 1]?.contributions || 0;
   const totalReturns = chartData[chartData.length - 1]?.returns || 0;
-  const monthlyPension = Math.round((finalCapital * 0.04) / 12);
+  
+  // More realistic monthly pension calculation
+  // Use 4% withdrawal rate but account for taxes
+  const annualWithdrawal = finalCapital * 0.04;
+  const monthlyPensionGross = annualWithdrawal / 12;
+
+  // Calculate dynamic Ertragsanteil based on retirement age
+  const ertragsanteil = getErtragsanteil(inputs.retirementAge);
+  
+  // Tax calculation depends on product type
+  let netMonthlyPension: number;
+  if (productParams.taxationType === 'ertragsanteil') {
+    // Private pension: Only Ertragsanteil is taxed
+    const taxablePortionPension = monthlyPensionGross * (ertragsanteil / 100);
+    const taxAmount = taxablePortionPension * 0.25; // Simplified: 25% personal tax rate
+    netMonthlyPension = monthlyPensionGross - taxAmount;
+  } else {
+    // Riester/Rürup/Occupational: Full taxation
+    const taxAmount = monthlyPensionGross * 0.25; // Simplified: 25% personal tax rate
+    netMonthlyPension = monthlyPensionGross - taxAmount;
+  }
 
   const InputField = ({
     label,
@@ -431,6 +543,58 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
                   max={10}
                 />
 
+                {/* Guarantee Factor Selection */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    {t.guaranteeFactor}
+                    <span className="text-xs text-muted-foreground">({t.guaranteeFactorDesc})</span>
+                  </Label>
+                  <Select
+                    value={inputs.guaranteeFactor || 'chance'}
+                    onValueChange={(value: 'chance' | 'balance' | 'guarantee') =>
+                      setInputs({ ...inputs, guaranteeFactor: value })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t.guaranteeFactor} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="chance">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-primary" />
+                          {t.chanceInvest}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="balance">
+                        <div className="flex items-center gap-2">
+                          <PieChart className="h-4 w-4 text-warning" />
+                          {t.balance}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="guarantee">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-success" />
+                          {t.guarantee}
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {inputs.guaranteeFactor === 'chance' &&
+                      (language === 'de'
+                        ? 'Höchste Rendite, höheres Risiko (6-8% p.a.)'
+                        : 'Highest returns, higher risk (6-8% p.a.)')}
+                    {inputs.guaranteeFactor === 'balance' &&
+                      (language === 'de'
+                        ? 'Ausgewogene Mischung (4-6% p.a.)'
+                        : 'Balanced mix (4-6% p.a.)')}
+                    {inputs.guaranteeFactor === 'guarantee' &&
+                      (language === 'de'
+                        ? 'Garantierte Sicherheit, niedrigere Rendite (2-4% p.a.)'
+                        : 'Guaranteed security, lower returns (2-4% p.a.)')}
+                  </p>
+                </div>
+
                 <Button
                   onClick={calculatePension}
                   disabled={isCalculating}
@@ -502,8 +666,8 @@ export const PremiumCalculator: React.FC<PremiumCalculatorProps> = ({ language =
                       <ResultCard
                         icon={TrendingUp}
                         label={t.monthlyPension}
-                        value={`€${monthlyPension.toLocaleString('de-DE')}`}
-                        subtitle={language === 'de' ? 'bei 4% Entnahme' : 'at 4% withdrawal'}
+                        value={`€${Math.round(netMonthlyPension).toLocaleString('de-DE')}`}
+                        subtitle={`${language === 'de' ? 'Netto nach Steuern' : 'Net after taxes'} (Ertragsanteil: ${ertragsanteil}%)`}
                         color="from-green-500 to-green-600"
                       />
                       <ResultCard
