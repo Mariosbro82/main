@@ -2,9 +2,9 @@ name: Deploy React App to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, experimenting ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, experimenting ]
 
 jobs:
   build-and-deploy:
@@ -39,18 +39,18 @@ jobs:
         NODE_ENV: production
         VITE_BASE_PATH: "/${{ github.event.repository.name }}/"
 
-    # Only deploy on push to main, skip on pull requests
+    # Only deploy on push to main or experimenting, skip on pull requests
     - name: Setup Pages
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experimenting')
       uses: actions/configure-pages@v4
 
     - name: Upload artifact
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experimenting')
       uses: actions/upload-pages-artifact@v3
       with:
         path: './dist'
 
     - name: Deploy to GitHub Pages
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experimenting')
       id: deployment
       uses: actions/deploy-pages@v4
