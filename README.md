@@ -2,6 +2,18 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## 🚀 Deployment
+
+This project is configured for automatic deployment to GitHub Pages. The site is available at:
+- **Production**: https://mariosbro82.github.io/main/
+
+### GitHub Pages Setup
+To enable deployment, ensure GitHub Pages is configured:
+1. Go to Repository Settings → Pages
+2. Set Source to "Deploy from a branch"
+3. Select `gh-pages` branch and `/ (root)` folder
+4. The workflow will automatically deploy on push to `main` or `experimenting` branches
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh

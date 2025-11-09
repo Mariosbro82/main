@@ -32,6 +32,49 @@ jobs:
         NODE_ENV: production
         VITE_BASE_PATH: "/${{ github.event.repository.name }}/"
 
+    # Check GitHub Pages status before deployment
+    - name: Check GitHub Pages Status
+      id: pages-check
+      continue-on-error: true
+      run: |
+        echo "🔍 Checking GitHub Pages configuration..."
+        PAGES_STATUS=$(curl -s -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/pages" | jq -r '.status // "not_configured"')
+        
+        echo "pages_status=${PAGES_STATUS}" >> $GITHUB_OUTPUT
+        
+        if [ "$PAGES_STATUS" == "not_configured" ] || [ "$PAGES_STATUS" == "null" ]; then
+          echo "⚠️  WARNING: GitHub Pages is not enabled for this repository!"
+          echo "📖 To enable it:"
+          echo "   1. Go to: https://github.com/${{ github.repository }}/settings/pages"
+          echo "   2. Under 'Build and deployment', set Source to 'Deploy from a branch'"
+          echo "   3. Select branch 'gh-pages' and folder '/ (root)'"
+          echo "   4. Click Save"
+          echo ""
+          echo "❌ Deployment will fail until GitHub Pages is enabled."
+        else
+          echo "✅ GitHub Pages is enabled with status: ${PAGES_STATUS}"
+        fi
+
+    # Validate build output
+    - name: Validate Build Output
+      run: |
+        echo "🔍 Validating build output..."
+        if [ ! -d "./dist" ]; then
+          echo "❌ Error: ./dist directory not found!"
+          exit 1
+        fi
+        
+        if [ ! -f "./dist/index.html" ]; then
+          echo "❌ Error: ./dist/index.html not found!"
+          exit 1
+        fi
+        
+        echo "✅ Build output validated successfully"
+        echo "📦 Build contents:"
+        ls -lah ./dist | head -10
+
     # Deploy to gh-pages branch (bypasses environment protection rules)
     - name: Deploy to GitHub Pages
       if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experimenting')
@@ -43,3 +86,24 @@ jobs:
         user_name: 'github-actions[bot]'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         commit_message: 'Deploy from ${{ github.ref_name }} (${{ github.sha }})'
+    
+    # Post-deployment status
+    - name: Deployment Summary
+      if: always()
+      run: |
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📊 Deployment Summary"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🔨 Build: ${{ job.status }}"
+        echo "📦 Branch: ${{ github.ref_name }}"
+        echo "📝 Commit: ${{ github.sha }}"
+        echo "🌐 Expected URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+        echo ""
+        if [ "${{ steps.pages-check.outputs.pages_status }}" == "not_configured" ]; then
+          echo "⚠️  GitHub Pages is NOT enabled - Please enable it in repository settings!"
+          echo "📖 Settings: https://github.com/${{ github.repository }}/settings/pages"
+        else
+          echo "✅ Deployment completed successfully!"
+          echo "⏱️  Site should be live in 1-3 minutes"
+        fi
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
