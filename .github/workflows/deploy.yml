@@ -2,7 +2,7 @@ name: Deploy React App to GitHub Pages
 
 on:
   push:
-    branches: [ main, experimenting ]
+    branches: [ '**' ]  # Trigger on all branches to provide build feedback
   pull_request:
     branches: [ main, experimenting ]
 
@@ -74,6 +74,17 @@ jobs:
         echo "✅ Build output validated successfully"
         echo "📦 Build contents:"
         ls -lah ./dist | head -10
+
+    # Deployment decision notice
+    - name: Deployment Decision
+      run: |
+        if [[ "${{ github.event_name }}" == "push" && ("${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/experimenting") ]]; then
+          echo "✅ This branch (${{ github.ref_name }}) will be deployed to GitHub Pages"
+        else
+          echo "ℹ️  Build successful, but skipping deployment"
+          echo "📝 Deployments only happen from: main, experimenting"
+          echo "🔧 Current branch: ${{ github.ref_name }}"
+        fi
 
     # Deploy to gh-pages branch (bypasses environment protection rules)
     - name: Deploy to GitHub Pages
